@@ -1,4 +1,4 @@
-package com.example.simplestbook;
+package com.github.daoyou.simplestbook;
 
 import android.content.Context;
 import android.graphics.Color;

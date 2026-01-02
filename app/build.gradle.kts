@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.simplestbook"
+    namespace = "com.github.daoyou.simplestbook"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.simplestbook"
+        applicationId = "com.github.daoyou.simplestbook"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

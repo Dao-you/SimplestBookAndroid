@@ -1,4 +1,4 @@
-package com.example.simplestbook;
+package com.github.daoyou.simplestbook;
 
 import android.app.Activity;
 import android.content.Intent;

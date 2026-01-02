@@ -1,7 +1,6 @@
-package com.example.simplestbook;
+package com.github.daoyou.simplestbook;
 
 import android.content.Context;
-import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

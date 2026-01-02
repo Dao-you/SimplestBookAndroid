@@ -1,4 +1,4 @@
-package com.example.simplestbook;
+package com.github.daoyou.simplestbook;
 
 import android.content.Intent;
 import android.database.Cursor;
@@ -128,8 +128,8 @@ public class HistoryActivity extends AppCompatActivity {
 
         // 點擊卡片跳轉至圖表頁面
         cardTotal.setOnClickListener(v -> {
-//            Intent intent = new Intent(this, ChartActivity.class);
-//            startActivity(intent);
+            Intent intent = new Intent(this, ChartActivity.class);
+            startActivity(intent);
         });
 
         // 點擊 FAB 返回主畫面
