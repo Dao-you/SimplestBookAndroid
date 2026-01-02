@@ -19,12 +19,15 @@
             app:navigationIcon="@drawable/ic_back" />
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTotal"
             style="@style/Widget.Material3.CardView.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
             app:cardCornerRadius="16dp"
-            app:cardElevation="0dp">
+            app:cardElevation="0dp"
+            android:clickable="true"
+            android:focusable="true">
 
             <LinearLayout
                 android:layout_width="match_parent"

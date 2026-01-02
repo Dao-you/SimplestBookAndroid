@@ -75,13 +75,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertRecord(int amount, String category, String note, double latitude, double longitude) {
+        insertRecord(amount, category, note, System.currentTimeMillis(), latitude, longitude);
+    }
+
+    public void insertRecord(int amount, String category, String note, long timestamp, double latitude, double longitude) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_ID, UUID.randomUUID().toString());
         values.put(COLUMN_AMOUNT, amount);
         values.put(COLUMN_CATEGORY, category);
         values.put(COLUMN_NOTE, note);
-        values.put(COLUMN_TIMESTAMP, System.currentTimeMillis());
+        values.put(COLUMN_TIMESTAMP, timestamp);
         values.put(COLUMN_LATITUDE, latitude);
         values.put(COLUMN_LONGITUDE, longitude);
         db.insert(TABLE_RECORDS, null, values);
@@ -104,6 +108,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void deleteRecord(String id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_RECORDS, COLUMN_ID + " = ?", new String[]{id});
+        db.close();
+    }
+
+    public void deleteAllRecords() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_RECORDS, null, null);
         db.close();
     }
 
