@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
@@ -37,6 +38,12 @@ public class RecordAdapter extends ArrayAdapter<Record> {
         itemCategory.setText(record.getCategory() + " - " + timeDisplay);
         
         itemAmount.setText("$ " + record.getAmount());
+
+        convertView.setOnClickListener(v -> {
+            if (parent instanceof ListView) {
+                ((ListView) parent).performItemClick(v, position, getItemId(position));
+            }
+        });
 
         return convertView;
     }

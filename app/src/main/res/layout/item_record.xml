@@ -6,6 +6,8 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="4dp"
+    android:clickable="true"
+    android:focusable="true"
     app:cardElevation="0dp"
     style="@style/Widget.Material3.CardView.Elevated">
 
