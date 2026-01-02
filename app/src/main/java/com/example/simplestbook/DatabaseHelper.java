@@ -11,7 +11,7 @@ import java.util.UUID;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "SimplestBook.db";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7; // 增加版本號以加入座標欄位
 
     public static final String TABLE_RECORDS = "records";
     public static final String COLUMN_ID = "id";
@@ -19,6 +19,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CATEGORY = "category";
     public static final String COLUMN_NOTE = "note";
     public static final String COLUMN_TIMESTAMP = "timestamp";
+    public static final String COLUMN_LATITUDE = "latitude";
+    public static final String COLUMN_LONGITUDE = "longitude";
 
     public static final String TABLE_CATEGORIES = "categories";
     public static final String COLUMN_CAT_ID = "id";
@@ -31,7 +33,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     COLUMN_AMOUNT + " INTEGER, " +
                     COLUMN_CATEGORY + " TEXT, " +
                     COLUMN_NOTE + " TEXT, " +
-                    COLUMN_TIMESTAMP + " INTEGER" +
+                    COLUMN_TIMESTAMP + " INTEGER, " +
+                    COLUMN_LATITUDE + " REAL, " +
+                    COLUMN_LONGITUDE + " REAL" +
                     ");";
 
     private static final String TABLE_CATEGORIES_CREATE =
@@ -70,7 +74,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void insertRecord(int amount, String category, String note) {
+    public void insertRecord(int amount, String category, String note, double latitude, double longitude) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_ID, UUID.randomUUID().toString());
@@ -78,17 +82,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_CATEGORY, category);
         values.put(COLUMN_NOTE, note);
         values.put(COLUMN_TIMESTAMP, System.currentTimeMillis());
+        values.put(COLUMN_LATITUDE, latitude);
+        values.put(COLUMN_LONGITUDE, longitude);
         db.insert(TABLE_RECORDS, null, values);
         db.close();
     }
 
-    public void updateRecord(String id, int amount, String category, String note, long timestamp) {
+    public void updateRecord(String id, int amount, String category, String note, long timestamp, double latitude, double longitude) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_AMOUNT, amount);
         values.put(COLUMN_CATEGORY, category);
         values.put(COLUMN_NOTE, note);
         values.put(COLUMN_TIMESTAMP, timestamp);
+        values.put(COLUMN_LATITUDE, latitude);
+        values.put(COLUMN_LONGITUDE, longitude);
         db.update(TABLE_RECORDS, values, COLUMN_ID + " = ?", new String[]{id});
         db.close();
     }

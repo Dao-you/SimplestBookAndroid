@@ -71,6 +71,8 @@ public class HistoryActivity extends AppCompatActivity {
                 intent.putExtra("category", selectedRecord.getCategory());
                 intent.putExtra("note", selectedRecord.getNote());
                 intent.putExtra("timestamp", selectedRecord.getTimestamp());
+                intent.putExtra("latitude", selectedRecord.getLatitude());
+                intent.putExtra("longitude", selectedRecord.getLongitude());
                 startActivity(intent);
             }
         });
@@ -91,8 +93,10 @@ public class HistoryActivity extends AppCompatActivity {
                         String category = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_CATEGORY));
                         String note = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_NOTE));
                         long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TIMESTAMP));
+                        double latitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LATITUDE));
+                        double longitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LONGITUDE));
 
-                        tempRecords.add(new Record(id, amount, category, note, timestamp));
+                        tempRecords.add(new Record(id, amount, category, note, timestamp, latitude, longitude));
                         total += amount;
                     } while (cursor.moveToNext());
                 }

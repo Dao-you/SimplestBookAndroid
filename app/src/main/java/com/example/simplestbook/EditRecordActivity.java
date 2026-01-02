@@ -2,30 +2,43 @@ package com.example.simplestbook;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.database.Cursor;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.GridView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class EditRecordActivity extends AppCompatActivity {
+public class EditRecordActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private MaterialToolbar editToolbar;
     private TextInputEditText editAmountInput;
@@ -34,12 +47,16 @@ public class EditRecordActivity extends AppCompatActivity {
     private GridView editCategoryGrid;
     private MaterialButton updateButton;
     private MaterialButton deleteButton;
-    
+    private View mapContainer;
+    private TextView textAddress;
+
     private DatabaseHelper dbHelper;
     private String recordId;
     private CategoryAdapter categoryAdapter;
     private List<Category> categories;
     private Calendar calendar;
+    private double latitude = 0.0;
+    private double longitude = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,45 +81,61 @@ public class EditRecordActivity extends AppCompatActivity {
         editCategoryGrid = findViewById(R.id.editCategoryGrid);
         updateButton = findViewById(R.id.updateButton);
         deleteButton = findViewById(R.id.deleteButton);
+        mapContainer = findViewById(R.id.mapContainer);
+        textAddress = findViewById(R.id.textAddress);
 
-        // 載入類別並設定 Adapter
         loadCategories();
 
-        // 1. 從 Intent 取得資料並填入
         if (getIntent() != null) {
             recordId = getIntent().getStringExtra("id");
             int amount = getIntent().getIntExtra("amount", 0);
             String category = getIntent().getStringExtra("category");
             String note = getIntent().getStringExtra("note");
             long timestamp = getIntent().getLongExtra("timestamp", System.currentTimeMillis());
+            latitude = getIntent().getDoubleExtra("latitude", 0.0);
+            longitude = getIntent().getDoubleExtra("longitude", 0.0);
 
             editAmountInput.setText(String.valueOf(amount));
             editNoteInput.setText(note);
             calendar.setTimeInMillis(timestamp);
             updateTimeDisplay();
             
-            // 設定當前記錄的類別為選中狀態
             if (category != null) {
                 categoryAdapter.setSelectedCategory(category);
             }
+
+            if (latitude != 0.0 || longitude != 0.0) {
+                mapContainer.setVisibility(View.VISIBLE);
+                
+                // 執行反向地理編碼取得地址
+                updateAddressLabel();
+
+                SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map_container_view);
+                if (mapFragment != null) {
+                    mapFragment.getMapAsync(this);
+                }
+
+                // 設定點擊卡片跳轉
+                mapContainer.setOnClickListener(v -> {
+                    Intent intent = new Intent(this, FullMapActivity.class);
+                    intent.putExtra("latitude", latitude);
+                    intent.putExtra("longitude", longitude);
+                    intent.putExtra("title", "$" + editAmountInput.getText() + " - " + editNoteInput.getText());
+                    startActivity(intent);
+                });
+            } else {
+                mapContainer.setVisibility(View.GONE);
+            }
         }
 
-        // 時間輸入框點擊彈出選擇器
         editTimeInput.setOnClickListener(v -> showDateTimePicker());
-
-        // 類別點擊監聽
         editCategoryGrid.setOnItemClickListener((parent, view, position, id) -> {
             String selectedName = categories.get(position).getName();
             categoryAdapter.setSelectedCategory(selectedName);
         });
 
-        // 工具列返回按鈕
         editToolbar.setNavigationOnClickListener(v -> finish());
-
-        // 更新按鈕邏輯
         updateButton.setOnClickListener(v -> updateRecord());
-
-        // 鍵盤「完成/送出」按鈕邏輯
         editNoteInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 updateRecord();
@@ -111,14 +144,73 @@ public class EditRecordActivity extends AppCompatActivity {
             return false;
         });
 
-        // 刪除邏輯
         deleteButton.setOnClickListener(v -> {
-            if (recordId != null) {
-                dbHelper.deleteRecord(recordId);
-                Toast.makeText(this, "已刪除", Toast.LENGTH_SHORT).show();
-                finish();
-            }
+            new MaterialAlertDialogBuilder(this)
+                .setTitle("確認刪除")
+                .setMessage("確定要刪除這筆紀錄嗎？此動作無法復原。")
+                .setPositiveButton("刪除", (dialog, which) -> {
+                    if (recordId != null) {
+                        dbHelper.deleteRecord(recordId);
+                        Toast.makeText(this, "已刪除", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .setNegativeButton("取消", null)
+                .show();
         });
+    }
+
+    private void updateAddressLabel() {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address addr = addresses.get(0);
+                
+                // 收集所有可能的地址片段 (縣市、大區域、小區域、里/村)
+                List<String> rawParts = new ArrayList<>();
+                if (addr.getAdminArea() != null) rawParts.add(addr.getAdminArea());
+                if (addr.getSubAdminArea() != null) rawParts.add(addr.getSubAdminArea());
+                if (addr.getLocality() != null) rawParts.add(addr.getLocality());
+                if (addr.getSubLocality() != null) rawParts.add(addr.getSubLocality());
+                
+                StringBuilder sb = new StringBuilder();
+                for (String part : rawParts) {
+                    if (part == null || part.isEmpty()) continue;
+                    
+                    if (sb.length() == 0) {
+                        sb.append(part);
+                    } else {
+                        String current = sb.toString();
+                        // 處理包含關係：
+                        // 1. 如果新片段包含了目前的字串 (例如 "台北市" 遇到 "台北市大安區")
+                        if (part.startsWith(current)) {
+                            sb.setLength(0);
+                            sb.append(part);
+                        } 
+                        // 2. 如果目前的字串還沒包含新片段 (例如 "台北市大安區" 遇到 "光明里")
+                        else if (!current.contains(part)) {
+                            sb.append(part);
+                        }
+                    }
+                }
+                
+                String display = sb.toString();
+                textAddress.setText(display.isEmpty() ? "未知位置" : display);
+            } else {
+                textAddress.setText("無法取得位置名稱");
+            }
+        } catch (IOException e) {
+            textAddress.setText("讀取位置錯誤");
+        }
+    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        LatLng location = new LatLng(latitude, longitude);
+        googleMap.addMarker(new MarkerOptions().position(location).title("記帳位置"));
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f));
+        googleMap.getUiSettings().setAllGesturesEnabled(false);
     }
 
     private void showDateTimePicker() {
@@ -126,13 +218,11 @@ public class EditRecordActivity extends AppCompatActivity {
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
             calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-            
             new TimePickerDialog(this, (view1, hourOfDay, minute) -> {
                 calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                 calendar.set(Calendar.MINUTE, minute);
                 updateTimeDisplay();
             }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show();
-            
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
@@ -155,19 +245,18 @@ public class EditRecordActivity extends AppCompatActivity {
             cursor.close();
         }
         categories.add(new Category("fixed_other", "其他"));
-        
         categoryAdapter = new CategoryAdapter(this, categories);
         editCategoryGrid.setAdapter(categoryAdapter);
     }
 
     private void updateRecord() {
         String amountStr = editAmountInput.getText().toString();
+        String note = editNoteInput.getText().toString().trim();
+        
         if (amountStr.isEmpty()) {
             Toast.makeText(this, "請輸入金額", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        String note = editNoteInput.getText().toString().trim();
         if (note.isEmpty()) {
             Toast.makeText(this, "請輸入說明", Toast.LENGTH_SHORT).show();
             return;
@@ -176,17 +265,16 @@ public class EditRecordActivity extends AppCompatActivity {
         try {
             int amount = Integer.parseInt(amountStr);
             String category = categoryAdapter.getSelectedCategoryName();
-
             if (category == null || category.isEmpty()) {
                 Toast.makeText(this, "請選擇類別", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            dbHelper.updateRecord(recordId, amount, category, note, calendar.getTimeInMillis());
+            dbHelper.updateRecord(recordId, amount, category, note, calendar.getTimeInMillis(), latitude, longitude);
             Toast.makeText(this, "更新成功", Toast.LENGTH_SHORT).show();
             finish();
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "請輸入有效的整數金額", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "金額格式錯誤", Toast.LENGTH_SHORT).show();
         }
     }
 }

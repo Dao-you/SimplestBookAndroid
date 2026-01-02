@@ -74,16 +74,18 @@
                     android:text="選擇類別"
                     android:textAppearance="?attr/textAppearanceTitleMedium" />
 
+                <!-- 使用 GridView 並設定固定高度與開啟巢狀捲動 -->
                 <GridView
                     android:id="@+id/categoryGrid"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="240dp"
                     android:layout_marginTop="8dp"
-                    android:horizontalSpacing="8dp"
                     android:numColumns="3"
-                    android:scrollbars="none"
-                    android:stretchMode="columnWidth"
                     android:verticalSpacing="8dp"
+                    android:horizontalSpacing="8dp"
+                    android:stretchMode="columnWidth"
+                    android:scrollbars="vertical"
+                    android:nestedScrollingEnabled="true"
                     tools:listitem="@layout/item_category" />
 
             </LinearLayout>
