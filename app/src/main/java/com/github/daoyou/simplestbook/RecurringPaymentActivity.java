@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -16,6 +17,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,7 +95,7 @@ public class RecurringPaymentActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_toolbar_cloud, menu);
+        getMenuInflater().inflate(R.menu.menu_recurring, menu);
         cloudStatusItem = menu.findItem(R.id.action_cloud_status);
         CloudBackupIndicator.unregister(this, backupIndicatorListener);
         backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
@@ -106,6 +108,10 @@ public class RecurringPaymentActivity extends AppCompatActivity {
             CloudBackupIndicator.showStatusSnackbar(this);
             return true;
         }
+        if (item.getItemId() == R.id.action_delete_all_recurring) {
+            confirmDeleteAllRecurring();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -113,6 +119,19 @@ public class RecurringPaymentActivity extends AppCompatActivity {
     protected void onDestroy() {
         CloudBackupIndicator.unregister(this, backupIndicatorListener);
         super.onDestroy();
+    }
+
+    private void confirmDeleteAllRecurring() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("刪除所有週期性付款")
+                .setMessage("確定要刪除所有週期性付款嗎？此動作無法復原。")
+                .setPositiveButton("刪除", (dialog, which) -> {
+                    dbHelper.deleteAllRecurringPayments();
+                    loadRecurringList();
+                    Toast.makeText(this, "已刪除所有週期性付款", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     @Override

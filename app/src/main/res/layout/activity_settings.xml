@@ -200,6 +200,41 @@
                 android:padding="8dp"
                 android:text="儲存後自動跳轉至歷史紀錄" />
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchRecurringNotify"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:padding="8dp"
+                android:text="週期性付款扣款時通知" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="偵錯"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorPrimary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonDebugInsertRecords"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="新增 200 筆記帳資料" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonDebugRecurringMinute"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="新增每分鐘付款的週期性付款" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

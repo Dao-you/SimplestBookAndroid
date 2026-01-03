@@ -34,6 +34,18 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
 public class SettingsActivity extends AppCompatActivity {
 
     public static final String PREFS_NAME = "SimplestBookSettings";
@@ -42,6 +54,7 @@ public class SettingsActivity extends AppCompatActivity {
     public static final String KEY_AUTO_HISTORY = "auto_history";
     public static final String KEY_THEME = "theme_mode"; // -1: System, 1: Light, 2: Dark
     public static final String KEY_CLOUD_BACKUP_ENABLED = "cloud_backup_enabled";
+    public static final String KEY_RECURRING_NOTIFY_ENABLED = "recurring_notify_enabled";
 
     private SharedPreferences prefs;
     private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
@@ -50,12 +63,15 @@ public class SettingsActivity extends AppCompatActivity {
     private MaterialButton buttonCloudSignIn;
     private MaterialButton buttonCloudBackupNow;
     private MaterialButton buttonCloudRestore;
+    private MaterialButton buttonDebugInsertRecords;
+    private MaterialButton buttonDebugRecurringMinute;
     private boolean suppressCloudSwitchListener;
     private MenuItem cloudStatusItem;
     private GoogleSignInClient googleSignInClient;
     private FirebaseAuth firebaseAuth;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
     private Runnable pendingSignInAction;
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +80,7 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        dbHelper = new DatabaseHelper(this);
         firebaseAuth = FirebaseAuth.getInstance();
         googleSignInClient = GoogleSignIn.getClient(this,
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -84,11 +101,14 @@ public class SettingsActivity extends AppCompatActivity {
         MaterialToolbar settingsToolbar = findViewById(R.id.settingsToolbar);
         MaterialSwitch switchLocation = findViewById(R.id.switchLocation);
         MaterialSwitch switchAutoHistory = findViewById(R.id.switchAutoHistory);
+        MaterialSwitch switchRecurringNotify = findViewById(R.id.switchRecurringNotify);
         switchCloudBackup = findViewById(R.id.switchCloudBackup);
         textCloudAccount = findViewById(R.id.textCloudAccount);
         buttonCloudSignIn = findViewById(R.id.buttonCloudSignIn);
         buttonCloudBackupNow = findViewById(R.id.buttonCloudBackupNow);
         buttonCloudRestore = findViewById(R.id.buttonCloudRestore);
+        buttonDebugInsertRecords = findViewById(R.id.buttonDebugInsertRecords);
+        buttonDebugRecurringMinute = findViewById(R.id.buttonDebugRecurringMinute);
         RadioGroup radioGroupDefaultCategory = findViewById(R.id.radioGroupDefaultCategory);
         RadioGroup radioGroupTheme = findViewById(R.id.radioGroupTheme);
         
@@ -134,6 +154,11 @@ public class SettingsActivity extends AppCompatActivity {
             switchAutoHistory.setOnCheckedChangeListener((v, isChecked) -> 
                 prefs.edit().putBoolean(KEY_AUTO_HISTORY, isChecked).apply());
         }
+        if (switchRecurringNotify != null) {
+            switchRecurringNotify.setChecked(prefs.getBoolean(KEY_RECURRING_NOTIFY_ENABLED, true));
+            switchRecurringNotify.setOnCheckedChangeListener((v, isChecked) ->
+                prefs.edit().putBoolean(KEY_RECURRING_NOTIFY_ENABLED, isChecked).apply());
+        }
 
         if (switchCloudBackup != null) {
             setCloudSwitchChecked(prefs.getBoolean(KEY_CLOUD_BACKUP_ENABLED, false));
@@ -162,6 +187,12 @@ public class SettingsActivity extends AppCompatActivity {
 
         if (buttonCloudRestore != null) {
             buttonCloudRestore.setOnClickListener(v -> ensureSignedInThen(this::showRestoreOptions));
+        }
+        if (buttonDebugInsertRecords != null) {
+            buttonDebugInsertRecords.setOnClickListener(v -> insertDebugRecords());
+        }
+        if (buttonDebugRecurringMinute != null) {
+            buttonDebugRecurringMinute.setOnClickListener(v -> addDebugRecurringMinute());
         }
         
         int defaultCat = prefs.getInt(KEY_DEFAULT_CATEGORY, 0);
@@ -356,5 +387,80 @@ public class SettingsActivity extends AppCompatActivity {
         }
         Toast.makeText(this, "Google 登入失敗", Toast.LENGTH_SHORT).show();
         updateCloudUi();
+    }
+
+    private void insertDebugRecords() {
+        new Thread(() -> {
+            List<DebugRecord> records = loadDebugRecords();
+            if (records.isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(this, "偵錯資料讀取失敗", Toast.LENGTH_SHORT).show());
+                return;
+            }
+            Random random = new Random();
+            long now = System.currentTimeMillis();
+            long maxOffset = 30L * 24 * 60 * 60 * 1000;
+            for (int i = 0; i < 200; i++) {
+                DebugRecord source = records.get(random.nextInt(records.size()));
+                long ts = now - (long) (random.nextDouble() * maxOffset);
+                dbHelper.insertRecord(source.amount, source.category, source.note, "", ts, 0.0, 0.0);
+            }
+            CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
+            runOnUiThread(() -> Toast.makeText(this, "已新增 200 筆記帳資料", Toast.LENGTH_SHORT).show());
+        }).start();
+    }
+
+    private void addDebugRecurringMinute() {
+        new Thread(() -> {
+            String id = UUID.randomUUID().toString();
+            dbHelper.insertRecurringPayment(
+                    id,
+                    50,
+                    "其他",
+                    "偵錯：每分鐘付款",
+                    RecurringPayment.FREQ_MINUTE,
+                    0,
+                    0,
+                    0
+            );
+            RecurringPaymentAlarmReceiver.scheduleAllMinute(getApplicationContext());
+            runOnUiThread(() -> Toast.makeText(this, "已新增每分鐘付款", Toast.LENGTH_SHORT).show());
+        }).start();
+    }
+
+    private List<DebugRecord> loadDebugRecords() {
+        List<DebugRecord> records = new ArrayList<>();
+        try (InputStream inputStream = getResources().openRawResource(R.raw.debug_records);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            JSONArray array = new JSONArray(sb.toString());
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                String note = obj.optString("note", "");
+                String category = obj.optString("category", "其他");
+                int amount = obj.optInt("amount", 0);
+                if (amount > 0 && !note.isEmpty()) {
+                    records.add(new DebugRecord(amount, category, note));
+                }
+            }
+        } catch (Exception ignored) {
+            return records;
+        }
+        return records;
+    }
+
+    private static class DebugRecord {
+        final int amount;
+        final String category;
+        final String note;
+
+        DebugRecord(int amount, String category, String note) {
+            this.amount = amount;
+            this.category = category;
+            this.note = note;
+        }
     }
 }

@@ -1,0 +1,502 @@
+[
+  {
+    "note": "早餐豆漿1",
+    "category": "餐飲",
+    "amount": 35
+  },
+  {
+    "note": "早餐蛋餅2",
+    "category": "餐飲",
+    "amount": 55
+  },
+  {
+    "note": "午餐便當3",
+    "category": "餐飲",
+    "amount": 120
+  },
+  {
+    "note": "晚餐牛肉麵4",
+    "category": "餐飲",
+    "amount": 195
+  },
+  {
+    "note": "咖啡5",
+    "category": "餐飲",
+    "amount": 140
+  },
+  {
+    "note": "手搖飲1",
+    "category": "餐飲",
+    "amount": 90
+  },
+  {
+    "note": "捷運票2",
+    "category": "交通",
+    "amount": 60
+  },
+  {
+    "note": "公車票3",
+    "category": "交通",
+    "amount": 15
+  },
+  {
+    "note": "停車費4",
+    "category": "交通",
+    "amount": 65
+  },
+  {
+    "note": "加油5",
+    "category": "交通",
+    "amount": 610
+  },
+  {
+    "note": "超市採買1",
+    "category": "購物",
+    "amount": 495
+  },
+  {
+    "note": "便利商店2",
+    "category": "購物",
+    "amount": 115
+  },
+  {
+    "note": "生活用品3",
+    "category": "購物",
+    "amount": 245
+  },
+  {
+    "note": "衣物4",
+    "category": "購物",
+    "amount": 920
+  },
+  {
+    "note": "電影票5",
+    "category": "娛樂",
+    "amount": 330
+  },
+  {
+    "note": "展覽門票1",
+    "category": "娛樂",
+    "amount": 255
+  },
+  {
+    "note": "KTV2",
+    "category": "娛樂",
+    "amount": 530
+  },
+  {
+    "note": "健身房月費3",
+    "category": "娛樂",
+    "amount": 1215
+  },
+  {
+    "note": "診所掛號4",
+    "category": "醫療",
+    "amount": 170
+  },
+  {
+    "note": "藥局購買5",
+    "category": "醫療",
+    "amount": 235
+  },
+  {
+    "note": "牙科1",
+    "category": "醫療",
+    "amount": 480
+  },
+  {
+    "note": "生活雜費2",
+    "category": "其他",
+    "amount": 300
+  },
+  {
+    "note": "手機費3",
+    "category": "其他",
+    "amount": 604
+  },
+  {
+    "note": "網路費4",
+    "category": "其他",
+    "amount": 809
+  },
+  {
+    "note": "午餐麵食5",
+    "category": "餐飲",
+    "amount": 110
+  },
+  {
+    "note": "早餐三明治1",
+    "category": "餐飲",
+    "amount": 75
+  },
+  {
+    "note": "夜市小吃2",
+    "category": "餐飲",
+    "amount": 185
+  },
+  {
+    "note": "計程車3",
+    "category": "交通",
+    "amount": 210
+  },
+  {
+    "note": "高鐵4",
+    "category": "交通",
+    "amount": 1100
+  },
+  {
+    "note": "家用品5",
+    "category": "購物",
+    "amount": 355
+  },
+  {
+    "note": "早餐豆漿1",
+    "category": "餐飲",
+    "amount": 45
+  },
+  {
+    "note": "早餐蛋餅2",
+    "category": "餐飲",
+    "amount": 65
+  },
+  {
+    "note": "午餐便當3",
+    "category": "餐飲",
+    "amount": 130
+  },
+  {
+    "note": "晚餐牛肉麵4",
+    "category": "餐飲",
+    "amount": 205
+  },
+  {
+    "note": "咖啡5",
+    "category": "餐飲",
+    "amount": 150
+  },
+  {
+    "note": "手搖飲1",
+    "category": "餐飲",
+    "amount": 65
+  },
+  {
+    "note": "捷運票2",
+    "category": "交通",
+    "amount": 35
+  },
+  {
+    "note": "公車票3",
+    "category": "交通",
+    "amount": 25
+  },
+  {
+    "note": "停車費4",
+    "category": "交通",
+    "amount": 75
+  },
+  {
+    "note": "加油5",
+    "category": "交通",
+    "amount": 620
+  },
+  {
+    "note": "超市採買1",
+    "category": "購物",
+    "amount": 505
+  },
+  {
+    "note": "便利商店2",
+    "category": "購物",
+    "amount": 125
+  },
+  {
+    "note": "生活用品3",
+    "category": "購物",
+    "amount": 220
+  },
+  {
+    "note": "衣物4",
+    "category": "購物",
+    "amount": 895
+  },
+  {
+    "note": "電影票5",
+    "category": "娛樂",
+    "amount": 340
+  },
+  {
+    "note": "展覽門票1",
+    "category": "娛樂",
+    "amount": 265
+  },
+  {
+    "note": "KTV2",
+    "category": "娛樂",
+    "amount": 540
+  },
+  {
+    "note": "健身房月費3",
+    "category": "娛樂",
+    "amount": 1225
+  },
+  {
+    "note": "診所掛號4",
+    "category": "醫療",
+    "amount": 180
+  },
+  {
+    "note": "藥局購買5",
+    "category": "醫療",
+    "amount": 210
+  },
+  {
+    "note": "牙科1",
+    "category": "醫療",
+    "amount": 455
+  },
+  {
+    "note": "生活雜費2",
+    "category": "其他",
+    "amount": 310
+  },
+  {
+    "note": "手機費3",
+    "category": "其他",
+    "amount": 614
+  },
+  {
+    "note": "網路費4",
+    "category": "其他",
+    "amount": 819
+  },
+  {
+    "note": "午餐麵食5",
+    "category": "餐飲",
+    "amount": 120
+  },
+  {
+    "note": "早餐三明治1",
+    "category": "餐飲",
+    "amount": 85
+  },
+  {
+    "note": "夜市小吃2",
+    "category": "餐飲",
+    "amount": 160
+  },
+  {
+    "note": "計程車3",
+    "category": "交通",
+    "amount": 185
+  },
+  {
+    "note": "高鐵4",
+    "category": "交通",
+    "amount": 1110
+  },
+  {
+    "note": "家用品5",
+    "category": "購物",
+    "amount": 365
+  },
+  {
+    "note": "早餐豆漿1",
+    "category": "餐飲",
+    "amount": 55
+  },
+  {
+    "note": "早餐蛋餅2",
+    "category": "餐飲",
+    "amount": 75
+  },
+  {
+    "note": "午餐便當3",
+    "category": "餐飲",
+    "amount": 140
+  },
+  {
+    "note": "晚餐牛肉麵4",
+    "category": "餐飲",
+    "amount": 180
+  },
+  {
+    "note": "咖啡5",
+    "category": "餐飲",
+    "amount": 125
+  },
+  {
+    "note": "手搖飲1",
+    "category": "餐飲",
+    "amount": 75
+  },
+  {
+    "note": "捷運票2",
+    "category": "交通",
+    "amount": 45
+  },
+  {
+    "note": "公車票3",
+    "category": "交通",
+    "amount": 35
+  },
+  {
+    "note": "停車費4",
+    "category": "交通",
+    "amount": 85
+  },
+  {
+    "note": "加油5",
+    "category": "交通",
+    "amount": 630
+  },
+  {
+    "note": "超市採買1",
+    "category": "購物",
+    "amount": 480
+  },
+  {
+    "note": "便利商店2",
+    "category": "購物",
+    "amount": 100
+  },
+  {
+    "note": "生活用品3",
+    "category": "購物",
+    "amount": 230
+  },
+  {
+    "note": "衣物4",
+    "category": "購物",
+    "amount": 905
+  },
+  {
+    "note": "電影票5",
+    "category": "娛樂",
+    "amount": 350
+  },
+  {
+    "note": "展覽門票1",
+    "category": "娛樂",
+    "amount": 275
+  },
+  {
+    "note": "KTV2",
+    "category": "娛樂",
+    "amount": 550
+  },
+  {
+    "note": "健身房月費3",
+    "category": "娛樂",
+    "amount": 1200
+  },
+  {
+    "note": "診所掛號4",
+    "category": "醫療",
+    "amount": 155
+  },
+  {
+    "note": "藥局購買5",
+    "category": "醫療",
+    "amount": 220
+  },
+  {
+    "note": "牙科1",
+    "category": "醫療",
+    "amount": 465
+  },
+  {
+    "note": "生活雜費2",
+    "category": "其他",
+    "amount": 320
+  },
+  {
+    "note": "手機費3",
+    "category": "其他",
+    "amount": 624
+  },
+  {
+    "note": "網路費4",
+    "category": "其他",
+    "amount": 829
+  },
+  {
+    "note": "午餐麵食5",
+    "category": "餐飲",
+    "amount": 95
+  },
+  {
+    "note": "早餐三明治1",
+    "category": "餐飲",
+    "amount": 60
+  },
+  {
+    "note": "夜市小吃2",
+    "category": "餐飲",
+    "amount": 170
+  },
+  {
+    "note": "計程車3",
+    "category": "交通",
+    "amount": 195
+  },
+  {
+    "note": "高鐵4",
+    "category": "交通",
+    "amount": 1120
+  },
+  {
+    "note": "家用品5",
+    "category": "購物",
+    "amount": 375
+  },
+  {
+    "note": "早餐豆漿1",
+    "category": "餐飲",
+    "amount": 65
+  },
+  {
+    "note": "早餐蛋餅2",
+    "category": "餐飲",
+    "amount": 50
+  },
+  {
+    "note": "午餐便當3",
+    "category": "餐飲",
+    "amount": 115
+  },
+  {
+    "note": "晚餐牛肉麵4",
+    "category": "餐飲",
+    "amount": 190
+  },
+  {
+    "note": "咖啡5",
+    "category": "餐飲",
+    "amount": 135
+  },
+  {
+    "note": "手搖飲1",
+    "category": "餐飲",
+    "amount": 85
+  },
+  {
+    "note": "捷運票2",
+    "category": "交通",
+    "amount": 55
+  },
+  {
+    "note": "公車票3",
+    "category": "交通",
+    "amount": 45
+  },
+  {
+    "note": "停車費4",
+    "category": "交通",
+    "amount": 60
+  },
+  {
+    "note": "加油5",
+    "category": "交通",
+    "amount": 605
+  }
+]

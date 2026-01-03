@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
@@ -32,6 +33,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -326,18 +328,18 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void updatePrimaryActionLabel() {
+        int colorPrimary = MaterialColors.getColor(updateButton, android.R.attr.colorPrimary);
+        int colorOnPrimary = MaterialColors.getColor(updateButton, com.google.android.material.R.attr.colorOnPrimary);
+        int colorError = MaterialColors.getColor(updateButton, android.R.attr.colorError);
+        int colorOnError = MaterialColors.getColor(updateButton, com.google.android.material.R.attr.colorOnError);
         if (isEdited()) {
             updateButton.setText("更新");
-            int primary = androidx.core.content.ContextCompat.getColor(this, R.color.purple_200);
-            int white = androidx.core.content.ContextCompat.getColor(this, R.color.white);
-            updateButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary));
-            updateButton.setTextColor(android.content.res.ColorStateList.valueOf(white));
+            updateButton.setBackgroundTintList(ColorStateList.valueOf(colorPrimary));
+            updateButton.setTextColor(colorOnPrimary);
         } else {
             updateButton.setText("刪除紀錄");
-            int errorColor = androidx.core.content.ContextCompat.getColor(this, R.color.colorError);
-            int onError = androidx.core.content.ContextCompat.getColor(this, R.color.white);
-            updateButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(errorColor));
-            updateButton.setTextColor(onError);
+            updateButton.setBackgroundTintList(ColorStateList.valueOf(colorError));
+            updateButton.setTextColor(colorOnError);
         }
     }
 

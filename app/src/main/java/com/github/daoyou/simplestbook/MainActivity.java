@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
     private MenuItem cloudStatusItem;
+    private static final int REQ_NOTIFICATIONS = 2001;
 
     private double preFetchedLat = 0.0;
     private double preFetchedLon = 0.0;
@@ -119,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
 
         checkPermission();
         RecurringPaymentWorker.schedule(getApplicationContext());
+        RecurringPaymentAlarmReceiver.scheduleAllMinute(getApplicationContext());
+        checkRecurringNotificationPermission();
     }
 
     private void checkPermission() {
@@ -251,6 +254,20 @@ public class MainActivity extends AppCompatActivity {
         prefetchLocation();
         CloudBackupManager.verifyPendingSync(getApplicationContext());
         updatePrimaryActionLabel();
+    }
+
+    private void checkRecurringNotificationPermission() {
+        if (!prefs.getBoolean(SettingsActivity.KEY_RECURRING_NOTIFY_ENABLED, true)) {
+            return;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    this, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(
+                        this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATIONS);
+            }
+        }
     }
 
     private void handlePrimaryAction() {

@@ -233,7 +233,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_RECURRING_DAY_OF_MONTH, dayOfMonth);
         values.put(COLUMN_RECURRING_MONTH, month);
         values.put(COLUMN_RECURRING_LAST_RUN_DATE, 0);
-        db.insert(TABLE_RECURRING, null, values);
+        db.insertWithOnConflict(TABLE_RECURRING, null, values, SQLiteDatabase.CONFLICT_REPLACE);
         db.close();
     }
 
@@ -266,6 +266,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void deleteRecurringPayment(String id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_RECURRING, COLUMN_RECURRING_ID + " = ?", new String[]{id});
+        db.close();
+    }
+
+    public void deleteAllRecurringPayments() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_RECURRING, null, null);
         db.close();
     }
 

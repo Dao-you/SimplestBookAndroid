@@ -2,8 +2,10 @@ package com.github.daoyou.simplestbook;
 
 public class RecurringPayment {
     public static final String FREQ_WEEKLY = "weekly";
+    public static final String FREQ_DAILY = "daily";
     public static final String FREQ_MONTHLY = "monthly";
     public static final String FREQ_YEARLY = "yearly";
+    public static final String FREQ_MINUTE = "minute";
 
     private final String id;
     private final int amount;

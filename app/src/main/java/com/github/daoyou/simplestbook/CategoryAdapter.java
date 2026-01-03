@@ -1,7 +1,6 @@
 package com.github.daoyou.simplestbook;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.color.MaterialColors;
 
 import java.util.List;
 
@@ -47,13 +47,12 @@ public class CategoryAdapter extends ArrayAdapter<Category> {
             nameText.setText(category.getName());
         }
 
-        // 移除所有 Material You 動態取色，改用固定顏色
-        int colorPrimary = Color.parseColor("#6750A4");
-        int colorSecondaryContainer = Color.parseColor("#E8DEF8");
-        int colorOnSecondaryContainer = Color.parseColor("#1D192B");
-        int colorOutline = Color.parseColor("#79747E");
-        int colorSurface = Color.parseColor("#FFFBFE");
-        int colorOnSurface = Color.parseColor("#1C1B1F");
+        int colorPrimary = MaterialColors.getColor(card, android.R.attr.colorPrimary);
+        int colorSecondaryContainer = MaterialColors.getColor(card, com.google.android.material.R.attr.colorSecondaryContainer);
+        int colorOnSecondaryContainer = MaterialColors.getColor(card, com.google.android.material.R.attr.colorOnSecondaryContainer);
+        int colorOutline = MaterialColors.getColor(card, com.google.android.material.R.attr.colorOutline);
+        int colorSurface = MaterialColors.getColor(card, com.google.android.material.R.attr.colorSurface);
+        int colorOnSurface = MaterialColors.getColor(card, com.google.android.material.R.attr.colorOnSurface);
 
         int strokeWidth2dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getContext().getResources().getDisplayMetrics());
         int strokeWidth1dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, getContext().getResources().getDisplayMetrics());

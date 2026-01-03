@@ -89,6 +89,12 @@ public class RecurringPaymentWorker extends Worker {
 
     private boolean isDueToday(RecurringPayment item, LocalDate today) {
         String freq = item.getFrequency();
+        if (RecurringPayment.FREQ_MINUTE.equals(freq)) {
+            return false;
+        }
+        if (RecurringPayment.FREQ_DAILY.equals(freq)) {
+            return true;
+        }
         if (RecurringPayment.FREQ_WEEKLY.equals(freq)) {
             return today.getDayOfWeek().getValue() == item.getDayOfWeek();
         }
@@ -103,6 +109,11 @@ public class RecurringPaymentWorker extends Worker {
     }
 
     private void sendNotification(RecurringPayment item) {
+        android.content.SharedPreferences prefs = getApplicationContext()
+                .getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        if (!prefs.getBoolean(SettingsActivity.KEY_RECURRING_NOTIFY_ENABLED, true)) {
+            return;
+        }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(getApplicationContext(),
                     android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -122,10 +133,19 @@ public class RecurringPaymentWorker extends Worker {
 
         String title = "已新增週期性記帳";
         String content = item.getNote() + " · $" + item.getAmount();
+        android.content.Intent intent = new android.content.Intent(getApplicationContext(), HistoryActivity.class);
+        android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(
+                getApplicationContext(),
+                0,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+        );
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_cloud_done)
+                .setSmallIcon(R.drawable.ic_cycle)
                 .setContentTitle(title)
                 .setContentText(content)
+                .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
         manager.notify((int) (System.currentTimeMillis() % 100000), builder.build());
     }

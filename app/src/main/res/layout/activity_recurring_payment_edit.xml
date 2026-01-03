@@ -45,7 +45,9 @@
                     android:id="@+id/recurringAmountInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number" />
+                    android:inputType="number"
+                    android:textSize="32sp" />
+
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -94,6 +96,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/recurringDailyButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="每日" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/recurringWeeklyButton"
@@ -185,7 +195,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="刪除"
-                android:textColor="@color/colorError" />
+                android:textColor="?attr/colorError" />
         </LinearLayout>
     </RelativeLayout>
 

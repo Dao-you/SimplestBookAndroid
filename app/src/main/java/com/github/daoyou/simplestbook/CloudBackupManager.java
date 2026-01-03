@@ -98,6 +98,7 @@ public class CloudBackupManager {
                 .addOnSuccessListener(snapshot -> {
                     Object raw = snapshot.get("records");
                     Object rawCategories = snapshot.get("categories");
+                    Object rawRecurring = snapshot.get("recurring");
                     if (!(raw instanceof List)) {
                         updateStatus(prefs, STATUS_ERROR, "empty backup");
                         postRestoreResult(callback, false, "empty backup", 0, 0);
@@ -105,9 +106,11 @@ public class CloudBackupManager {
                     }
                     List<?> list = (List<?>) raw;
                     List<?> categories = rawCategories instanceof List ? (List<?>) rawCategories : null;
+                    List<?> recurring = rawRecurring instanceof List ? (List<?>) rawRecurring : null;
                     new Thread(() -> {
                         int recordCount = restoreRecords(appContext, list, overwrite);
                         int categoryCount = restoreCategories(appContext, categories, overwrite);
+                        restoreRecurring(appContext, recurring, overwrite);
                         updateStatus(prefs, STATUS_SUCCESS, null);
                         postRestoreResult(callback, true, "ok", recordCount, categoryCount);
                     }).start();
@@ -142,12 +145,14 @@ public class CloudBackupManager {
                 Log.d(TAG, "uploadBackup: Reading data from local database...");
                 List<Map<String, Object>> records = readRecords(context);
                 List<Map<String, Object>> categories = readCategories(context);
+                List<Map<String, Object>> recurring = readRecurring(context);
                 int recordCount = records.size();
                 int categoryCount = categories.size();
                 
                 Map<String, Object> payload = new HashMap<>();
                 payload.put("records", records);
                 payload.put("categories", categories);
+                payload.put("recurring", recurring);
                 payload.put("updatedAt", FieldValue.serverTimestamp());
 
                 Log.d(TAG, "uploadBackup: Starting Firestore sync. Records: " + records.size());
@@ -229,6 +234,31 @@ public class CloudBackupManager {
             cursor.close();
         }
         return categories;
+    }
+
+    private static List<Map<String, Object>> readRecurring(Context context) {
+        List<Map<String, Object>> recurring = new ArrayList<>();
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        Cursor cursor = dbHelper.getAllRecurringPayments();
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                do {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("id", cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_ID)));
+                    item.put("amount", cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_AMOUNT)));
+                    item.put("category", cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_CATEGORY)));
+                    item.put("note", cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_NOTE)));
+                    item.put("frequency", cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_FREQUENCY)));
+                    item.put("dayOfWeek", cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_DAY_OF_WEEK)));
+                    item.put("dayOfMonth", cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_DAY_OF_MONTH)));
+                    item.put("month", cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_MONTH)));
+                    item.put("lastRunDate", cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_RECURRING_LAST_RUN_DATE)));
+                    recurring.add(item);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        }
+        return recurring;
     }
 
     private static int restoreRecords(Context context, List<?> list, boolean overwrite) {
@@ -327,6 +357,41 @@ public class CloudBackupManager {
             restored++;
         }
         return restored;
+    }
+
+    private static void restoreRecurring(Context context, List<?> list, boolean overwrite) {
+        if (list == null) {
+            return;
+        }
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        if (overwrite) {
+            dbHelper.deleteAllRecurringPayments();
+        }
+        for (Object item : list) {
+            if (!(item instanceof Map)) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> recurring = (Map<String, Object>) item;
+            String id = getString(recurring.get("id"));
+            Integer amount = getInt(recurring.get("amount"));
+            String category = getString(recurring.get("category"));
+            String note = getString(recurring.get("note"));
+            String frequency = getString(recurring.get("frequency"));
+            Integer dayOfWeek = getInt(recurring.get("dayOfWeek"));
+            Integer dayOfMonth = getInt(recurring.get("dayOfMonth"));
+            Integer month = getInt(recurring.get("month"));
+
+            if (id == null || amount == null || category == null || note == null || frequency == null) {
+                continue;
+            }
+            int safeDayOfWeek = dayOfWeek == null ? 0 : dayOfWeek;
+            int safeDayOfMonth = dayOfMonth == null ? 0 : dayOfMonth;
+            int safeMonth = month == null ? 0 : month;
+            dbHelper.insertRecurringPayment(id, amount, category, note, frequency, safeDayOfWeek, safeDayOfMonth, safeMonth);
+        }
+        RecurringPaymentWorker.schedule(context.getApplicationContext());
+        RecurringPaymentAlarmReceiver.scheduleAllMinute(context.getApplicationContext());
     }
 
     private static void postRestoreResult(RestoreCallback callback, boolean success, String message, int recordCount, int categoryCount) {

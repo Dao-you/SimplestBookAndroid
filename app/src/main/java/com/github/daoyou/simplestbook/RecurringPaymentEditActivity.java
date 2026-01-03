@@ -2,6 +2,7 @@ package com.github.daoyou.simplestbook;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -175,6 +177,10 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
                 weekdaySpinner.setVisibility(View.VISIBLE);
                 monthlyContainer.setVisibility(View.GONE);
                 yearlyContainer.setVisibility(View.GONE);
+            } else if (checkedId == R.id.recurringDailyButton) {
+                weekdaySpinner.setVisibility(View.GONE);
+                monthlyContainer.setVisibility(View.GONE);
+                yearlyContainer.setVisibility(View.GONE);
             } else if (checkedId == R.id.recurringMonthlyButton) {
                 weekdaySpinner.setVisibility(View.GONE);
                 monthlyContainer.setVisibility(View.VISIBLE);
@@ -204,7 +210,12 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
                 noteInput.setText(note);
                 categoryAdapter.setSelectedCategory(category);
 
-                if (RecurringPayment.FREQ_WEEKLY.equals(frequency)) {
+                if (RecurringPayment.FREQ_MINUTE.equals(frequency)) {
+                    frequencyGroup.check(R.id.recurringWeeklyButton);
+                    weekdaySpinner.setSelection(0);
+                } else if (RecurringPayment.FREQ_DAILY.equals(frequency)) {
+                    frequencyGroup.check(R.id.recurringDailyButton);
+                } else if (RecurringPayment.FREQ_WEEKLY.equals(frequency)) {
                     frequencyGroup.check(R.id.recurringWeeklyButton);
                     weekdaySpinner.setSelection(Math.max(dayOfWeek - 1, 0));
                 } else if (RecurringPayment.FREQ_MONTHLY.equals(frequency)) {
@@ -230,6 +241,7 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
     }
 
     private void save() {
+        checkRecurringNotificationPermission();
         String amountStr = amountInput.getText() == null ? "" : amountInput.getText().toString().trim();
         String note = noteInput.getText() == null ? "" : noteInput.getText().toString().trim();
         if (amountStr.isEmpty()) {
@@ -262,6 +274,8 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
         if (checked == R.id.recurringWeeklyButton) {
             frequency = RecurringPayment.FREQ_WEEKLY;
             dayOfWeek = weekdaySpinner.getSelectedItemPosition() + 1;
+        } else if (checked == R.id.recurringDailyButton) {
+            frequency = RecurringPayment.FREQ_DAILY;
         } else if (checked == R.id.recurringMonthlyButton) {
             frequency = RecurringPayment.FREQ_MONTHLY;
             dayOfMonth = dayOfMonthSpinner.getSelectedItemPosition() + 1;
@@ -277,7 +291,11 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
         } else {
             dbHelper.updateRecurringPayment(recurringId, amount, category, note, frequency, dayOfWeek, dayOfMonth, month);
         }
+        CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
         RecurringPaymentWorker.schedule(getApplicationContext());
+        if (RecurringPayment.FREQ_MINUTE.equals(frequency)) {
+            RecurringPaymentAlarmReceiver.scheduleAllMinute(getApplicationContext());
+        }
         Toast.makeText(this, "已儲存", Toast.LENGTH_SHORT).show();
         finish();
     }
@@ -299,30 +317,30 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
     }
 
     private void updatePrimaryActionLabel() {
+        int colorPrimary = MaterialColors.getColor(saveButton, android.R.attr.colorPrimary);
+        int colorOnPrimary = MaterialColors.getColor(saveButton, com.google.android.material.R.attr.colorOnPrimary);
+        int colorError = MaterialColors.getColor(saveButton, android.R.attr.colorError);
+        int colorOnError = MaterialColors.getColor(saveButton, com.google.android.material.R.attr.colorOnError);
         if (!isEditMode) {
             if (hasInput()) {
                 saveButton.setText("儲存");
-                int primary = androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary);
-                saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary));
-                saveButton.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
+                saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorPrimary));
+                saveButton.setTextColor(colorOnPrimary);
             } else {
                 saveButton.setText("取消");
-                int primary = androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary);
-                saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary));
-                saveButton.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
+                saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.TRANSPARENT));
+                saveButton.setTextColor(colorPrimary);
             }
             return;
         }
         if (isEdited()) {
             saveButton.setText("更新");
-            int primary = androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary);
-            saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary));
-            saveButton.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
+            saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorPrimary));
+            saveButton.setTextColor(colorOnPrimary);
         } else {
             saveButton.setText("刪除");
-            int errorColor = androidx.core.content.ContextCompat.getColor(this, R.color.colorError);
-            saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(errorColor));
-            saveButton.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
+            saveButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorError));
+            saveButton.setTextColor(colorOnError);
         }
     }
 
@@ -347,6 +365,8 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
         if (checked == R.id.recurringWeeklyButton) {
             frequency = RecurringPayment.FREQ_WEEKLY;
             dayOfWeek = weekdaySpinner.getSelectedItemPosition() + 1;
+        } else if (checked == R.id.recurringDailyButton) {
+            frequency = RecurringPayment.FREQ_DAILY;
         } else if (checked == R.id.recurringMonthlyButton) {
             frequency = RecurringPayment.FREQ_MONTHLY;
             dayOfMonth = dayOfMonthSpinner.getSelectedItemPosition() + 1;
@@ -382,6 +402,7 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
                 .setMessage("確定要刪除這筆週期性付款嗎？")
                 .setPositiveButton("刪除", (dialog, which) -> {
                     dbHelper.deleteRecurringPayment(recurringId);
+                    CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
                     finish();
                 })
                 .setNegativeButton("取消", null)
@@ -394,6 +415,22 @@ public class RecurringPaymentEditActivity extends AppCompatActivity {
             labels.add(i + suffix);
         }
         return labels;
+    }
+
+    private void checkRecurringNotificationPermission() {
+        android.content.SharedPreferences prefs = getSharedPreferences(
+                SettingsActivity.PREFS_NAME, MODE_PRIVATE);
+        if (!prefs.getBoolean(SettingsActivity.KEY_RECURRING_NOTIFY_ENABLED, true)) {
+            return;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    this, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(
+                        this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 2002);
+            }
+        }
     }
 
     private static class SimpleTextWatcher implements android.text.TextWatcher {

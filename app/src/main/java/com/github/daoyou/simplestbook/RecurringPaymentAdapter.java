@@ -40,6 +40,12 @@ public class RecurringPaymentAdapter extends ArrayAdapter<RecurringPayment> {
             int day = item.getDayOfWeek();
             return "每週 " + (day >= 1 && day <= 7 ? weekdays[day] : "未設定");
         }
+        if (RecurringPayment.FREQ_DAILY.equals(freq)) {
+            return "每日";
+        }
+        if (RecurringPayment.FREQ_MINUTE.equals(freq)) {
+            return "每分鐘";
+        }
         if (RecurringPayment.FREQ_MONTHLY.equals(freq)) {
             return "每月 " + item.getDayOfMonth() + " 日";
         }
