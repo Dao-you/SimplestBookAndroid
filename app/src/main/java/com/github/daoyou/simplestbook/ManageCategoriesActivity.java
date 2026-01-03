@@ -1,11 +1,15 @@
 package com.github.daoyou.simplestbook;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +43,8 @@ public class ManageCategoriesActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private List<Category> categories;
     private CategoryManageAdapter adapter;
+    private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
+    private MenuItem cloudStatusItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +65,7 @@ public class ManageCategoriesActivity extends AppCompatActivity {
         newCategoryInput = findViewById(R.id.newCategoryInput);
         categoryRecyclerView = findViewById(R.id.categoryRecyclerView);
         finishCategoryButton = findViewById(R.id.finishCategoryButton);
+        setSupportActionBar(categoryToolbar);
 
         categoryToolbar.setNavigationOnClickListener(v -> finish());
         finishCategoryButton.setOnClickListener(v -> finish());
@@ -76,6 +83,30 @@ public class ManageCategoriesActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_toolbar_cloud, menu);
+        cloudStatusItem = menu.findItem(R.id.action_cloud_status);
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_cloud_status) {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void addCategory() {

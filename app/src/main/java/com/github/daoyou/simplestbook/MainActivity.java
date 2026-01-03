@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.inputmethod.EditorInfo;
 import android.widget.GridView;
 import android.widget.Toast;
@@ -42,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private List<Category> categories;
     private FusedLocationProviderClient fusedLocationClient;
     private SharedPreferences prefs;
+    private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
+    private MenuItem cloudStatusItem;
 
     private double preFetchedLat = 0.0;
     private double preFetchedLon = 0.0;
@@ -69,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
         categoryGrid = findViewById(R.id.categoryGrid);
         saveButton = findViewById(R.id.saveButton);
         viewHistoryButton = findViewById(R.id.viewHistoryButton);
+        cloudStatusItem = topAppBar.getMenu().findItem(R.id.action_cloud_status);
+        backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
 
         loadCategories();
 
@@ -88,6 +93,10 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 return true;
             } else if (item.getItemId() == R.id.action_settings) {
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
+                return true;
+            } else if (item.getItemId() == R.id.action_cloud_status) {
                 Intent intent = new Intent(this, SettingsActivity.class);
                 startActivity(intent);
                 return true;
@@ -208,6 +217,7 @@ public class MainActivity extends AppCompatActivity {
     private void performDatabaseSave(int amount, String category, String note, double lat, double lon) {
         new Thread(() -> {
             dbHelper.insertRecord(amount, category, note, lat, lon);
+            CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
             runOnUiThread(this::completeSave);
         }).start();
     }
@@ -233,5 +243,11 @@ public class MainActivity extends AppCompatActivity {
         loadCategories();
         amountInput.requestFocus();
         prefetchLocation();
+    }
+
+    @Override
+    protected void onDestroy() {
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        super.onDestroy();
     }
 }

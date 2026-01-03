@@ -1,10 +1,17 @@
 package com.github.daoyou.simplestbook;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.RadioGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
@@ -12,8 +19,20 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.radiobutton.MaterialRadioButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -22,8 +41,21 @@ public class SettingsActivity extends AppCompatActivity {
     public static final String KEY_DEFAULT_CATEGORY = "default_category"; // 0: First, 1: Other, 2: None
     public static final String KEY_AUTO_HISTORY = "auto_history";
     public static final String KEY_THEME = "theme_mode"; // -1: System, 1: Light, 2: Dark
+    public static final String KEY_CLOUD_BACKUP_ENABLED = "cloud_backup_enabled";
 
     private SharedPreferences prefs;
+    private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
+    private MaterialSwitch switchCloudBackup;
+    private TextView textCloudAccount;
+    private MaterialButton buttonCloudSignIn;
+    private MaterialButton buttonCloudBackupNow;
+    private MaterialButton buttonCloudRestore;
+    private boolean suppressCloudSwitchListener;
+    private MenuItem cloudStatusItem;
+    private GoogleSignInClient googleSignInClient;
+    private FirebaseAuth firebaseAuth;
+    private ActivityResultLauncher<Intent> googleSignInLauncher;
+    private Runnable pendingSignInAction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +64,16 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        firebaseAuth = FirebaseAuth.getInstance();
+        googleSignInClient = GoogleSignIn.getClient(this,
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken(getString(R.string.default_web_client_id))
+                        .requestEmail()
+                        .build());
+        googleSignInLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> handleGoogleSignInResult(result.getData())
+        );
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -42,6 +84,11 @@ public class SettingsActivity extends AppCompatActivity {
         MaterialToolbar settingsToolbar = findViewById(R.id.settingsToolbar);
         MaterialSwitch switchLocation = findViewById(R.id.switchLocation);
         MaterialSwitch switchAutoHistory = findViewById(R.id.switchAutoHistory);
+        switchCloudBackup = findViewById(R.id.switchCloudBackup);
+        textCloudAccount = findViewById(R.id.textCloudAccount);
+        buttonCloudSignIn = findViewById(R.id.buttonCloudSignIn);
+        buttonCloudBackupNow = findViewById(R.id.buttonCloudBackupNow);
+        buttonCloudRestore = findViewById(R.id.buttonCloudRestore);
         RadioGroup radioGroupDefaultCategory = findViewById(R.id.radioGroupDefaultCategory);
         RadioGroup radioGroupTheme = findViewById(R.id.radioGroupTheme);
         
@@ -54,6 +101,7 @@ public class SettingsActivity extends AppCompatActivity {
         MaterialRadioButton radioThemeDark = findViewById(R.id.radioThemeDark);
 
         if (settingsToolbar != null) {
+            setSupportActionBar(settingsToolbar);
             settingsToolbar.setNavigationOnClickListener(v -> finish());
         }
 
@@ -86,6 +134,35 @@ public class SettingsActivity extends AppCompatActivity {
             switchAutoHistory.setOnCheckedChangeListener((v, isChecked) -> 
                 prefs.edit().putBoolean(KEY_AUTO_HISTORY, isChecked).apply());
         }
+
+        if (switchCloudBackup != null) {
+            setCloudSwitchChecked(prefs.getBoolean(KEY_CLOUD_BACKUP_ENABLED, false));
+            switchCloudBackup.setOnCheckedChangeListener((v, isChecked) -> {
+                if (suppressCloudSwitchListener) {
+                    return;
+                }
+                handleCloudBackupToggle(isChecked);
+            });
+        }
+
+        if (buttonCloudSignIn != null) {
+            buttonCloudSignIn.setOnClickListener(v -> startGoogleSignIn(null));
+        }
+
+        if (buttonCloudBackupNow != null) {
+            buttonCloudBackupNow.setOnClickListener(v -> ensureSignedInThen(() -> {
+                if (!prefs.getBoolean(KEY_CLOUD_BACKUP_ENABLED, false)) {
+                    Toast.makeText(this, "請先啟用雲端備份", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                CloudBackupManager.syncNow(getApplicationContext());
+                Toast.makeText(this, "開始備份", Toast.LENGTH_SHORT).show();
+            }));
+        }
+
+        if (buttonCloudRestore != null) {
+            buttonCloudRestore.setOnClickListener(v -> ensureSignedInThen(this::showRestoreOptions));
+        }
         
         int defaultCat = prefs.getInt(KEY_DEFAULT_CATEGORY, 0);
         if (radioFirst != null && defaultCat == 0) radioFirst.setChecked(true);
@@ -101,5 +178,182 @@ public class SettingsActivity extends AppCompatActivity {
                 prefs.edit().putInt(KEY_DEFAULT_CATEGORY, value).apply();
             });
         }
+
+        updateCloudUi();
+    }
+
+    @Override
+    protected void onDestroy() {
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateCloudUi();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_toolbar_cloud, menu);
+        cloudStatusItem = menu.findItem(R.id.action_cloud_status);
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_cloud_status) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void handleCloudBackupToggle(boolean enabled) {
+        if (!enabled) {
+            prefs.edit().putBoolean(KEY_CLOUD_BACKUP_ENABLED, false).apply();
+            CloudBackupManager.markDisabled(getApplicationContext());
+            updateCloudUi();
+            return;
+        }
+
+        startGoogleSignIn(() -> {
+            prefs.edit().putBoolean(KEY_CLOUD_BACKUP_ENABLED, true).apply();
+            CloudBackupManager.syncNow(getApplicationContext());
+            updateCloudUi();
+        });
+    }
+
+    private void startGoogleSignIn(Runnable onSuccess) {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            if (onSuccess != null) {
+                onSuccess.run();
+            }
+            updateCloudUi();
+            return;
+        }
+        pendingSignInAction = onSuccess;
+        googleSignInClient.signOut().addOnCompleteListener(task -> {
+            Intent signInIntent = googleSignInClient.getSignInIntent();
+            googleSignInLauncher.launch(signInIntent);
+        });
+    }
+
+    private void ensureSignedInThen(Runnable action) {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            if (action != null) {
+                action.run();
+            }
+            return;
+        }
+        startGoogleSignIn(action);
+    }
+
+    private void showRestoreOptions() {
+        if (!prefs.getBoolean(KEY_CLOUD_BACKUP_ENABLED, false)) {
+            Toast.makeText(this, "請先啟用雲端備份", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] options = {"加入現有資料 (Append)", "覆蓋現有資料 (Overwrite)"};
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("恢復選項")
+                .setItems(options, (dialog, which) -> {
+                    boolean overwrite = (which == 1);
+                    CloudBackupManager.restoreFromCloud(getApplicationContext(), overwrite,
+                            (success, message, recordCount, categoryCount) -> {
+                                if (success) {
+                                    String text = "已恢復 " + recordCount + " 筆資料";
+                                    if (categoryCount > 0) {
+                                        text += "，類別 " + categoryCount + " 筆";
+                                    }
+                                    Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(this, "恢復失敗", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void updateCloudUi() {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        String accountText = "尚未登入";
+        if (user != null) {
+            if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+                accountText = user.getEmail();
+            } else if (user.getDisplayName() != null && !user.getDisplayName().isEmpty()) {
+                accountText = user.getDisplayName();
+            } else {
+                accountText = "已登入";
+            }
+        }
+        if (textCloudAccount != null) {
+            textCloudAccount.setText(accountText);
+        }
+
+        boolean enabled = prefs.getBoolean(KEY_CLOUD_BACKUP_ENABLED, false);
+        if (buttonCloudBackupNow != null) {
+            buttonCloudBackupNow.setEnabled(enabled && user != null);
+        }
+        if (buttonCloudRestore != null) {
+            buttonCloudRestore.setEnabled(enabled && user != null);
+        }
+        if (buttonCloudSignIn != null) {
+            buttonCloudSignIn.setEnabled(true);
+        }
+        if (switchCloudBackup != null && switchCloudBackup.isChecked() != enabled) {
+            setCloudSwitchChecked(enabled);
+        }
+    }
+
+    private void setCloudSwitchChecked(boolean checked) {
+        if (switchCloudBackup == null) {
+            return;
+        }
+        suppressCloudSwitchListener = true;
+        switchCloudBackup.setChecked(checked);
+        suppressCloudSwitchListener = false;
+    }
+
+    private void handleGoogleSignInResult(Intent data) {
+        if (data == null) {
+            onGoogleSignInFailed();
+            return;
+        }
+        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+        try {
+            GoogleSignInAccount account = task.getResult(ApiException.class);
+            if (account == null || account.getIdToken() == null) {
+                onGoogleSignInFailed();
+                return;
+            }
+            firebaseAuth.signInWithCredential(GoogleAuthProvider.getCredential(account.getIdToken(), null))
+                    .addOnSuccessListener(result -> onGoogleSignInSuccess())
+                    .addOnFailureListener(e -> onGoogleSignInFailed());
+        } catch (ApiException e) {
+            onGoogleSignInFailed();
+        }
+    }
+
+    private void onGoogleSignInSuccess() {
+        if (pendingSignInAction != null) {
+            pendingSignInAction.run();
+            pendingSignInAction = null;
+        }
+        updateCloudUi();
+    }
+
+    private void onGoogleSignInFailed() {
+        pendingSignInAction = null;
+        if (switchCloudBackup != null && !prefs.getBoolean(KEY_CLOUD_BACKUP_ENABLED, false)) {
+            setCloudSwitchChecked(false);
+        }
+        Toast.makeText(this, "Google 登入失敗", Toast.LENGTH_SHORT).show();
+        updateCloudUi();
     }
 }

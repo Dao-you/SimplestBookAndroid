@@ -146,6 +146,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    public void deleteAllCategories() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_CATEGORIES, null, null);
+        db.close();
+    }
+
+    public void insertCategoryWithId(String id, String name, int order) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_CAT_ID, id);
+        values.put(COLUMN_CAT_NAME, name);
+        values.put(COLUMN_CAT_ORDER, order);
+        db.insert(TABLE_CATEGORIES, null, values);
+        db.close();
+    }
+
     public Cursor getAllCategories() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.query(TABLE_CATEGORIES, null, null, null, null, null, COLUMN_CAT_ORDER + " ASC");

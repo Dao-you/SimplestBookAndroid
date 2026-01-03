@@ -1,6 +1,7 @@
 package com.github.daoyou.simplestbook;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -42,6 +43,8 @@ public class HistoryActivity extends AppCompatActivity {
     private RecordAdapter adapter;
     private String pendingCsvContent;
     private CsvHelper csvHelper;
+    private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
+    private MenuItem cloudStatusItem;
 
     // 處理「儲存到檔案」的回傳
     private final ActivityResultLauncher<Intent> saveFileLauncher =
@@ -89,6 +92,7 @@ public class HistoryActivity extends AppCompatActivity {
                     // 修正：必須帶入匯入紀錄的 timestamp 參數
                     dbHelper.insertRecord(r.getAmount(), r.getCategory(), r.getNote(), r.getTimestamp(), r.getLatitude(), r.getLongitude());
                 }
+                CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
                 runOnUiThread(() -> {
                     Toast.makeText(this, "成功匯入 " + imported.size() + " 筆資料", Toast.LENGTH_SHORT).show();
                     loadRecords();
@@ -196,6 +200,9 @@ public class HistoryActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_history, menu);
+        cloudStatusItem = menu.findItem(R.id.action_cloud_status);
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
         
         // 將「清除所有資料」設為紅色
         MenuItem clearItem = menu.findItem(R.id.action_clear_data);
@@ -221,6 +228,9 @@ public class HistoryActivity extends AppCompatActivity {
         } else if (id == R.id.action_csv_import) {
             importFromCsv();
             return true;
+        } else if (id == R.id.action_cloud_status) {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
         } else if (id == R.id.action_clear_data) {
             confirmClearData();
             return true;
@@ -236,6 +246,7 @@ public class HistoryActivity extends AppCompatActivity {
                 .setPositiveButton("確定清除", (dialog, which) -> {
                     dbHelper.deleteAllRecords();
                     loadRecords();
+                    CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
                     Toast.makeText(this, "資料已全部清除", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("取消", null)
@@ -283,5 +294,11 @@ public class HistoryActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadRecords();
+    }
+
+    @Override
+    protected void onDestroy() {
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        super.onDestroy();
     }
 }

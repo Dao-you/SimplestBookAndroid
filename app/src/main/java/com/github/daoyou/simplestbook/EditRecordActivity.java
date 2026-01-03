@@ -3,11 +3,14 @@ package com.github.daoyou.simplestbook;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.inputmethod.EditorInfo;
 import android.widget.GridView;
 import android.widget.TextView;
@@ -57,6 +60,8 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     private Calendar calendar;
     private double latitude = 0.0;
     private double longitude = 0.0;
+    private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
+    private MenuItem cloudStatusItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +88,8 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
         deleteButton = findViewById(R.id.deleteButton);
         mapContainer = findViewById(R.id.mapContainer);
         textAddress = findViewById(R.id.textAddress);
+
+        setSupportActionBar(editToolbar);
 
         loadCategories();
 
@@ -151,6 +158,7 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
                 .setPositiveButton("刪除", (dialog, which) -> {
                     if (recordId != null) {
                         dbHelper.deleteRecord(recordId);
+                        CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
                         Toast.makeText(this, "已刪除", Toast.LENGTH_SHORT).show();
                         finish();
                     }
@@ -271,10 +279,35 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
             }
 
             dbHelper.updateRecord(recordId, amount, category, note, calendar.getTimeInMillis(), latitude, longitude);
+            CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
             Toast.makeText(this, "更新成功", Toast.LENGTH_SHORT).show();
             finish();
         } catch (NumberFormatException e) {
             Toast.makeText(this, "金額格式錯誤", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_toolbar_cloud, menu);
+        cloudStatusItem = menu.findItem(R.id.action_cloud_status);
+        CloudBackupIndicator.unregister(this, backupIndicatorListener);
+        backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_cloud_status) {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
