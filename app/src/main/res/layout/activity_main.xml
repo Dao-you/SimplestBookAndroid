@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="最簡單記帳"
-            app:menu="@menu/main_menu" />
+            app:menu="@menu/menu_main" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -104,17 +104,20 @@
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
-                android:text="儲存" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/viewHistoryButton"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:text="查看歷史紀錄" />
 
         </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/recurringFab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="96dp"
+            android:contentDescription="週期性付款"
+            app:srcCompat="@drawable/ic_cycle" />
     </RelativeLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

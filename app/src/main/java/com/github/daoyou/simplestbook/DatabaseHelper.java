@@ -11,7 +11,7 @@ import java.util.UUID;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "SimplestBook.db";
-    private static final int DATABASE_VERSION = 8; // 增加版本號以加入地點備註欄位
+    private static final int DATABASE_VERSION = 9; // 增加版本號以加入週期性付款欄位
 
     public static final String TABLE_RECORDS = "records";
     public static final String COLUMN_ID = "id";
@@ -22,6 +22,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_TIMESTAMP = "timestamp";
     public static final String COLUMN_LATITUDE = "latitude";
     public static final String COLUMN_LONGITUDE = "longitude";
+
+    public static final String TABLE_RECURRING = "recurring_payments";
+    public static final String COLUMN_RECURRING_ID = "id";
+    public static final String COLUMN_RECURRING_AMOUNT = "amount";
+    public static final String COLUMN_RECURRING_CATEGORY = "category";
+    public static final String COLUMN_RECURRING_NOTE = "note";
+    public static final String COLUMN_RECURRING_FREQUENCY = "frequency";
+    public static final String COLUMN_RECURRING_DAY_OF_WEEK = "day_of_week";
+    public static final String COLUMN_RECURRING_DAY_OF_MONTH = "day_of_month";
+    public static final String COLUMN_RECURRING_MONTH = "month";
+    public static final String COLUMN_RECURRING_LAST_RUN_DATE = "last_run_date";
 
     public static final String TABLE_CATEGORIES = "categories";
     public static final String COLUMN_CAT_ID = "id";
@@ -47,6 +58,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     COLUMN_CAT_ORDER + " INTEGER" +
                     ");";
 
+    private static final String TABLE_RECURRING_CREATE =
+            "CREATE TABLE " + TABLE_RECURRING + " (" +
+                    COLUMN_RECURRING_ID + " TEXT PRIMARY KEY, " +
+                    COLUMN_RECURRING_AMOUNT + " INTEGER, " +
+                    COLUMN_RECURRING_CATEGORY + " TEXT, " +
+                    COLUMN_RECURRING_NOTE + " TEXT, " +
+                    COLUMN_RECURRING_FREQUENCY + " TEXT, " +
+                    COLUMN_RECURRING_DAY_OF_WEEK + " INTEGER, " +
+                    COLUMN_RECURRING_DAY_OF_MONTH + " INTEGER, " +
+                    COLUMN_RECURRING_MONTH + " INTEGER, " +
+                    COLUMN_RECURRING_LAST_RUN_DATE + " INTEGER" +
+                    ");";
+
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -55,6 +79,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(TABLE_RECORDS_CREATE);
         db.execSQL(TABLE_CATEGORIES_CREATE);
+        db.execSQL(TABLE_RECURRING_CREATE);
         seedCategories(db);
     }
 
@@ -73,6 +98,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_RECORDS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_RECURRING);
         onCreate(db);
     }
 
@@ -192,5 +218,62 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Cursor getAllCategories() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.query(TABLE_CATEGORIES, null, null, null, null, null, COLUMN_CAT_ORDER + " ASC");
+    }
+
+    public void insertRecurringPayment(String id, int amount, String category, String note, String frequency,
+                                        int dayOfWeek, int dayOfMonth, int month) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_RECURRING_ID, id);
+        values.put(COLUMN_RECURRING_AMOUNT, amount);
+        values.put(COLUMN_RECURRING_CATEGORY, category);
+        values.put(COLUMN_RECURRING_NOTE, note);
+        values.put(COLUMN_RECURRING_FREQUENCY, frequency);
+        values.put(COLUMN_RECURRING_DAY_OF_WEEK, dayOfWeek);
+        values.put(COLUMN_RECURRING_DAY_OF_MONTH, dayOfMonth);
+        values.put(COLUMN_RECURRING_MONTH, month);
+        values.put(COLUMN_RECURRING_LAST_RUN_DATE, 0);
+        db.insert(TABLE_RECURRING, null, values);
+        db.close();
+    }
+
+    public Cursor getAllRecurringPayments() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(TABLE_RECURRING, null, null, null, null, null, COLUMN_RECURRING_NOTE + " ASC");
+    }
+
+    public Cursor getRecurringPaymentById(String id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(TABLE_RECURRING, null, COLUMN_RECURRING_ID + " = ?",
+                new String[]{id}, null, null, null);
+    }
+
+    public void updateRecurringPayment(String id, int amount, String category, String note, String frequency,
+                                        int dayOfWeek, int dayOfMonth, int month) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_RECURRING_AMOUNT, amount);
+        values.put(COLUMN_RECURRING_CATEGORY, category);
+        values.put(COLUMN_RECURRING_NOTE, note);
+        values.put(COLUMN_RECURRING_FREQUENCY, frequency);
+        values.put(COLUMN_RECURRING_DAY_OF_WEEK, dayOfWeek);
+        values.put(COLUMN_RECURRING_DAY_OF_MONTH, dayOfMonth);
+        values.put(COLUMN_RECURRING_MONTH, month);
+        db.update(TABLE_RECURRING, values, COLUMN_RECURRING_ID + " = ?", new String[]{id});
+        db.close();
+    }
+
+    public void deleteRecurringPayment(String id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_RECURRING, COLUMN_RECURRING_ID + " = ?", new String[]{id});
+        db.close();
+    }
+
+    public void updateRecurringLastRunDate(String id, int lastRunDate) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_RECURRING_LAST_RUN_DATE, lastRunDate);
+        db.update(TABLE_RECURRING, values, COLUMN_RECURRING_ID + " = ?", new String[]{id});
+        db.close();
     }
 }

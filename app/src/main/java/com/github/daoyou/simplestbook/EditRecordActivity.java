@@ -50,7 +50,6 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     private TextInputEditText editTimeInput;
     private GridView editCategoryGrid;
     private MaterialButton updateButton;
-    private MaterialButton deleteButton;
     private View mapContainer;
     private TextView textAddress;
 
@@ -62,6 +61,10 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     private Calendar calendar;
     private double latitude = 0.0;
     private double longitude = 0.0;
+    private int originalAmount;
+    private String originalCategory;
+    private String originalNote;
+    private long originalTimestamp;
     private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
     private MenuItem cloudStatusItem;
 
@@ -87,7 +90,6 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
         editTimeInput = findViewById(R.id.editTimeInput);
         editCategoryGrid = findViewById(R.id.editCategoryGrid);
         updateButton = findViewById(R.id.updateButton);
-        deleteButton = findViewById(R.id.deleteButton);
         mapContainer = findViewById(R.id.mapContainer);
         textAddress = findViewById(R.id.textAddress);
 
@@ -104,6 +106,11 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
             long timestamp = getIntent().getLongExtra("timestamp", System.currentTimeMillis());
             latitude = getIntent().getDoubleExtra("latitude", 0.0);
             longitude = getIntent().getDoubleExtra("longitude", 0.0);
+
+            originalAmount = amount;
+            originalCategory = category == null ? "" : category;
+            originalNote = note == null ? "" : note;
+            originalTimestamp = timestamp;
 
             editAmountInput.setText(String.valueOf(amount));
             editNoteInput.setText(note);
@@ -144,33 +151,21 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
         editCategoryGrid.setOnItemClickListener((parent, view, position, id) -> {
             String selectedName = categories.get(position).getName();
             categoryAdapter.setSelectedCategory(selectedName);
+            updatePrimaryActionLabel();
         });
 
         editToolbar.setNavigationOnClickListener(v -> finish());
-        updateButton.setOnClickListener(v -> updateRecord());
+        updateButton.setOnClickListener(v -> handlePrimaryAction());
         editNoteInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                updateRecord();
+                handlePrimaryAction();
                 return true;
             }
             return false;
         });
 
-        deleteButton.setOnClickListener(v -> {
-            new MaterialAlertDialogBuilder(this)
-                .setTitle("確認刪除")
-                .setMessage("確定要刪除這筆紀錄嗎？此動作無法復原。")
-                .setPositiveButton("刪除", (dialog, which) -> {
-                    if (recordId != null) {
-                        dbHelper.deleteRecord(recordId);
-                        CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
-                        Toast.makeText(this, "已刪除", Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
-                })
-                .setNegativeButton("取消", null)
-                .show();
-        });
+        editAmountInput.addTextChangedListener(new SimpleTextWatcher(this::updatePrimaryActionLabel));
+        editNoteInput.addTextChangedListener(new SimpleTextWatcher(this::updatePrimaryActionLabel));
     }
 
     private void updateAddressLabel() {
@@ -246,6 +241,7 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     private void updateTimeDisplay() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
         editTimeInput.setText(sdf.format(calendar.getTime()));
+        updatePrimaryActionLabel();
     }
 
     private void loadCategories() {
@@ -318,6 +314,81 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
         if (latitude != 0.0 || longitude != 0.0) {
             updateAddressLabel();
         }
+        updatePrimaryActionLabel();
+    }
+
+    private void handlePrimaryAction() {
+        if (isEdited()) {
+            updateRecord();
+        } else {
+            confirmDelete();
+        }
+    }
+
+    private void updatePrimaryActionLabel() {
+        if (isEdited()) {
+            updateButton.setText("更新");
+            int primary = androidx.core.content.ContextCompat.getColor(this, R.color.purple_200);
+            int white = androidx.core.content.ContextCompat.getColor(this, R.color.white);
+            updateButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary));
+            updateButton.setTextColor(android.content.res.ColorStateList.valueOf(white));
+        } else {
+            updateButton.setText("刪除紀錄");
+            int errorColor = androidx.core.content.ContextCompat.getColor(this, R.color.colorError);
+            int onError = androidx.core.content.ContextCompat.getColor(this, R.color.white);
+            updateButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(errorColor));
+            updateButton.setTextColor(onError);
+        }
+    }
+
+    private boolean isEdited() {
+        String amountStr = editAmountInput.getText() == null ? "" : editAmountInput.getText().toString().trim();
+        int amount = 0;
+        try {
+            amount = amountStr.isEmpty() ? 0 : Integer.parseInt(amountStr);
+        } catch (NumberFormatException ignored) {}
+        String note = editNoteInput.getText() == null ? "" : editNoteInput.getText().toString();
+        String category = categoryAdapter.getSelectedCategoryName();
+        String safeCategory = category == null ? "" : category;
+        return amount != originalAmount
+                || !safeCategory.equals(originalCategory)
+                || !note.equals(originalNote)
+                || calendar.getTimeInMillis() != originalTimestamp;
+    }
+
+    private void confirmDelete() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("確認刪除")
+                .setMessage("確定要刪除這筆紀錄嗎？此動作無法復原。")
+                .setPositiveButton("刪除", (dialog, which) -> {
+                    if (recordId != null) {
+                        dbHelper.deleteRecord(recordId);
+                        CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
+                        Toast.makeText(this, "已刪除", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private static class SimpleTextWatcher implements android.text.TextWatcher {
+        private final Runnable onChanged;
+
+        SimpleTextWatcher(Runnable onChanged) {
+            this.onChanged = onChanged;
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            onChanged.run();
+        }
+
+        @Override
+        public void afterTextChanged(android.text.Editable s) {}
     }
 
     @Override

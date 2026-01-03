@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private TextInputEditText noteInput;
     private GridView categoryGrid;
     private MaterialButton saveButton;
-    private MaterialButton viewHistoryButton;
+    private com.google.android.material.floatingactionbutton.FloatingActionButton recurringFab;
     private DatabaseHelper dbHelper;
     private CategoryAdapter categoryAdapter;
     private List<Category> categories;
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         noteInput = findViewById(R.id.noteInput);
         categoryGrid = findViewById(R.id.categoryGrid);
         saveButton = findViewById(R.id.saveButton);
-        viewHistoryButton = findViewById(R.id.viewHistoryButton);
+        recurringFab = findViewById(R.id.recurringFab);
         cloudStatusItem = topAppBar.getMenu().findItem(R.id.action_cloud_status);
         backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
 
@@ -82,8 +82,9 @@ public class MainActivity extends AppCompatActivity {
             categoryAdapter.setSelectedCategory(selectedName);
         });
 
-        viewHistoryButton.setOnClickListener(v -> {
-            Intent intent = new Intent(this, HistoryActivity.class);
+        saveButton.setOnClickListener(v -> handlePrimaryAction());
+        recurringFab.setOnClickListener(v -> {
+            Intent intent = new Intent(this, RecurringPaymentActivity.class);
             startActivity(intent);
         });
 
@@ -103,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-        saveButton.setOnClickListener(v -> saveRecord());
+        updatePrimaryActionLabel();
 
         noteInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -113,7 +114,11 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
+        amountInput.addTextChangedListener(new SimpleTextWatcher(this::updatePrimaryActionLabel));
+        noteInput.addTextChangedListener(new SimpleTextWatcher(this::updatePrimaryActionLabel));
+
         checkPermission();
+        RecurringPaymentWorker.schedule(getApplicationContext());
     }
 
     private void checkPermission() {
@@ -235,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             prefetchLocation(); // 留在本頁則重新預抽樣下一筆
         }
+        updatePrimaryActionLabel();
     }
 
     @Override
@@ -244,6 +250,49 @@ public class MainActivity extends AppCompatActivity {
         amountInput.requestFocus();
         prefetchLocation();
         CloudBackupManager.verifyPendingSync(getApplicationContext());
+        updatePrimaryActionLabel();
+    }
+
+    private void handlePrimaryAction() {
+        if (hasInput()) {
+            saveRecord();
+        } else {
+            Intent intent = new Intent(this, HistoryActivity.class);
+            startActivity(intent);
+        }
+    }
+
+    private void updatePrimaryActionLabel() {
+        if (hasInput()) {
+            saveButton.setText("儲存");
+        } else {
+            saveButton.setText("查看歷史紀錄");
+        }
+    }
+
+    private boolean hasInput() {
+        String amount = amountInput.getText() == null ? "" : amountInput.getText().toString().trim();
+        String note = noteInput.getText() == null ? "" : noteInput.getText().toString().trim();
+        return !amount.isEmpty() || !note.isEmpty();
+    }
+
+    private static class SimpleTextWatcher implements android.text.TextWatcher {
+        private final Runnable onChanged;
+
+        SimpleTextWatcher(Runnable onChanged) {
+            this.onChanged = onChanged;
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            onChanged.run();
+        }
+
+        @Override
+        public void afterTextChanged(android.text.Editable s) {}
     }
 
     @Override

@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -45,6 +46,8 @@
         <activity android:name=".SettingsActivity" android:exported="false" />
         <activity android:name=".FullMapActivity" android:exported="false" />
         <activity android:name=".ChartActivity" android:exported="false" />
+        <activity android:name=".RecurringPaymentActivity" android:exported="false" />
+        <activity android:name=".RecurringPaymentEditActivity" android:exported="false" />
 
     </application>
 
