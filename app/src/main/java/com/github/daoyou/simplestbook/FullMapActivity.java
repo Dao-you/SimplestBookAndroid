@@ -1,6 +1,5 @@
 package com.github.daoyou.simplestbook;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
@@ -84,7 +83,7 @@ public class FullMapActivity extends AppCompatActivity implements OnMapReadyCall
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_cloud_status) {
-            startActivity(new Intent(this, SettingsActivity.class));
+            CloudBackupIndicator.showStatusSnackbar(this);
             return true;
         }
         return super.onOptionsItemSelected(item);

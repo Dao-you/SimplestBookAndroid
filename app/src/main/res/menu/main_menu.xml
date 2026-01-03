@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_cloud_status"
-        android:icon="@drawable/ic_cloud_idle"
+        android:icon="@drawable/ic_cloud"
         android:title="雲端備份狀態"
         android:orderInCategory="0"
         app:showAsAction="always" />

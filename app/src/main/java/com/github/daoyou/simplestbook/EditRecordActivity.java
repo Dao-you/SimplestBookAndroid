@@ -305,7 +305,7 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_cloud_status) {
-            startActivity(new Intent(this, SettingsActivity.class));
+            CloudBackupIndicator.showStatusSnackbar(this);
             return true;
         }
         return super.onOptionsItemSelected(item);

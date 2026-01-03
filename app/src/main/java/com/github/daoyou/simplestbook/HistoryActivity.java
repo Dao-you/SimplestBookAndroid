@@ -229,7 +229,7 @@ public class HistoryActivity extends AppCompatActivity {
             importFromCsv();
             return true;
         } else if (id == R.id.action_cloud_status) {
-            startActivity(new Intent(this, SettingsActivity.class));
+            CloudBackupIndicator.showStatusSnackbar(this);
             return true;
         } else if (id == R.id.action_clear_data) {
             confirmClearData();
@@ -244,10 +244,13 @@ public class HistoryActivity extends AppCompatActivity {
                 .setTitle("警告")
                 .setMessage("確定要清除所有記帳資料嗎？此操作無法復原。")
                 .setPositiveButton("確定清除", (dialog, which) -> {
-                    dbHelper.deleteAllRecords();
-                    loadRecords();
-                    CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
-                    Toast.makeText(this, "資料已全部清除", Toast.LENGTH_SHORT).show();
+                    new Thread(() -> {
+                        dbHelper.deleteAllRecords();
+                        runOnUiThread(() -> {
+                            loadRecords();
+                            Toast.makeText(this, "資料已全部清除", Toast.LENGTH_SHORT).show();
+                        });
+                    }).start();
                 })
                 .setNegativeButton("取消", null)
                 .show();

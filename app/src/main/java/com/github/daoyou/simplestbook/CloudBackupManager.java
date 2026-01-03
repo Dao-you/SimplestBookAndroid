@@ -5,19 +5,23 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CloudBackupManager {
 
+    private static final String TAG = "CloudBackup";
     public static final int STATUS_IDLE = 0;
     public static final int STATUS_SYNCING = 1;
     public static final int STATUS_SUCCESS = 2;
@@ -26,7 +30,12 @@ public class CloudBackupManager {
     public static final String KEY_CLOUD_BACKUP_STATUS = "cloud_backup_status";
     public static final String KEY_CLOUD_BACKUP_LAST_SYNC = "cloud_backup_last_sync";
     public static final String KEY_CLOUD_BACKUP_LAST_ERROR = "cloud_backup_last_error";
-
+    private static final String KEY_CLOUD_BACKUP_EXPECTED_RECORDS = "cloud_backup_expected_records";
+    private static final String KEY_CLOUD_BACKUP_EXPECTED_CATEGORIES = "cloud_backup_expected_categories";
+    private static final String KEY_CLOUD_BACKUP_VERIFY_ATTEMPTS = "cloud_backup_verify_attempts";
+    private static final long VERIFY_INTERVAL_MS = 3000L;
+    private static final int VERIFY_MAX_ATTEMPTS = 3;
+    private static final AtomicBoolean VERIFY_IN_FLIGHT = new AtomicBoolean(false);
     private CloudBackupManager() {}
 
     public interface RestoreCallback {
@@ -110,23 +119,73 @@ public class CloudBackupManager {
                 });
     }
 
+    public static void verifyPendingSync(Context context) {
+        SharedPreferences prefs = getPrefs(context);
+        int status = prefs.getInt(KEY_CLOUD_BACKUP_STATUS, STATUS_IDLE);
+        int expectedRecords = prefs.getInt(KEY_CLOUD_BACKUP_EXPECTED_RECORDS, -1);
+        int expectedCategories = prefs.getInt(KEY_CLOUD_BACKUP_EXPECTED_CATEGORIES, -1);
+        Log.d(TAG, "verifyPendingSync: status=" + status + " expectedRecords=" + expectedRecords + " expectedCategories=" + expectedCategories);
+        if (status != STATUS_SYNCING || expectedRecords < 0 || expectedCategories < 0) {
+            return;
+        }
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            updateStatus(prefs, STATUS_ERROR, "not signed in");
+            clearVerifyState(prefs);
+            return;
+        }
+        scheduleVerify(context.getApplicationContext(), user.getUid(), prefs, 0L);
+    }
+
     private static void uploadBackup(Context context, String uid, SharedPreferences prefs) {
         new Thread(() -> {
-            List<Map<String, Object>> records = readRecords(context);
-            List<Map<String, Object>> categories = readCategories(context);
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("records", records);
-            payload.put("categories", categories);
-            payload.put("updatedAt", FieldValue.serverTimestamp());
+            try {
+                Log.d(TAG, "uploadBackup: Reading data from local database...");
+                List<Map<String, Object>> records = readRecords(context);
+                List<Map<String, Object>> categories = readCategories(context);
+                int recordCount = records.size();
+                int categoryCount = categories.size();
+                
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("records", records);
+                payload.put("categories", categories);
+                payload.put("updatedAt", FieldValue.serverTimestamp());
 
-            FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(uid)
-                    .collection("backups")
-                    .document("latest")
-                    .set(payload)
-                    .addOnSuccessListener(unused -> updateStatus(prefs, STATUS_SUCCESS, null))
-                    .addOnFailureListener(e -> updateStatus(prefs, STATUS_ERROR, e.getMessage()));
+                Log.d(TAG, "uploadBackup: Starting Firestore sync. Records: " + records.size());
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putInt(KEY_CLOUD_BACKUP_EXPECTED_RECORDS, recordCount);
+                editor.putInt(KEY_CLOUD_BACKUP_EXPECTED_CATEGORIES, categoryCount);
+                editor.putInt(KEY_CLOUD_BACKUP_VERIFY_ATTEMPTS, 0);
+                editor.apply();
+                VERIFY_IN_FLIGHT.set(false);
+                Log.d(TAG, "uploadBackup: Expected counts records=" + recordCount + " categories=" + categoryCount);
+                FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(uid)
+                        .collection("backups")
+                        .document("latest")
+                        .set(payload)
+                        .addOnSuccessListener(unused -> {
+                            Log.d(TAG, "uploadBackup: Successfully synced to Firestore.");
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "uploadBackup: Firestore task execution failed", e);
+                            updateStatus(prefs, STATUS_ERROR, e.getMessage());
+                            clearVerifyState(prefs);
+                        })
+                        .addOnCanceledListener(() -> {
+                            Log.e(TAG, "uploadBackup: Firestore task was cancelled");
+                            updateStatus(prefs, STATUS_ERROR, "Cancelled");
+                            clearVerifyState(prefs);
+                        });
+                Log.d(TAG, "uploadBackup: Scheduling verify in " + VERIFY_INTERVAL_MS + "ms");
+                scheduleVerify(context.getApplicationContext(), uid, prefs, VERIFY_INTERVAL_MS);
+
+            } catch (Exception e) {
+                Log.e(TAG, "uploadBackup: Unexpected error during backup process", e);
+                updateStatus(prefs, STATUS_ERROR, e.getMessage());
+                clearVerifyState(prefs);
+            }
         }).start();
     }
 
@@ -304,6 +363,7 @@ public class CloudBackupManager {
     }
 
     private static void updateStatus(SharedPreferences prefs, int status, String error) {
+        Log.d(TAG, "updateStatus: " + status + (error == null ? "" : " (Error: " + error + ")"));
         SharedPreferences.Editor editor = prefs.edit();
         editor.putInt(KEY_CLOUD_BACKUP_STATUS, status);
         if (status == STATUS_SUCCESS) {
@@ -319,5 +379,88 @@ public class CloudBackupManager {
 
     private static SharedPreferences getPrefs(Context context) {
         return context.getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
+    private static void scheduleVerify(Context context, String uid, SharedPreferences prefs, long delayMs) {
+        if (!VERIFY_IN_FLIGHT.compareAndSet(false, true)) {
+            Log.d(TAG, "scheduleVerify: already in flight, skip");
+            return;
+        }
+        Log.d(TAG, "scheduleVerify: delayMs=" + delayMs);
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(() -> checkRemoteCounts(context.getApplicationContext(), uid, prefs), delayMs);
+    }
+
+    private static void checkRemoteCounts(Context context, String uid, SharedPreferences prefs) {
+        int status = prefs.getInt(KEY_CLOUD_BACKUP_STATUS, STATUS_IDLE);
+        if (status != STATUS_SYNCING) {
+            Log.d(TAG, "checkRemoteCounts: status not syncing (" + status + "), stop");
+            VERIFY_IN_FLIGHT.set(false);
+            return;
+        }
+        int expectedRecords = prefs.getInt(KEY_CLOUD_BACKUP_EXPECTED_RECORDS, -1);
+        int expectedCategories = prefs.getInt(KEY_CLOUD_BACKUP_EXPECTED_CATEGORIES, -1);
+        if (expectedRecords < 0 || expectedCategories < 0) {
+            Log.d(TAG, "checkRemoteCounts: missing expected counts, stop");
+            VERIFY_IN_FLIGHT.set(false);
+            return;
+        }
+        int attempt = prefs.getInt(KEY_CLOUD_BACKUP_VERIFY_ATTEMPTS, 0);
+        Log.d(TAG, "checkRemoteCounts: attempt=" + attempt + " expectedRecords=" + expectedRecords + " expectedCategories=" + expectedCategories);
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(uid)
+                .collection("backups")
+                .document("latest")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    int remoteRecords = 0;
+                    int remoteCategories = 0;
+                    Object raw = snapshot.get("records");
+                    Object rawCategories = snapshot.get("categories");
+                    if (raw instanceof List) {
+                        remoteRecords = ((List<?>) raw).size();
+                    }
+                    if (rawCategories instanceof List) {
+                        remoteCategories = ((List<?>) rawCategories).size();
+                    }
+                    Log.d(TAG, "checkRemoteCounts: remoteRecords=" + remoteRecords + " remoteCategories=" + remoteCategories
+                            + " fromCache=" + snapshot.getMetadata().isFromCache());
+                    if (remoteRecords == expectedRecords && remoteCategories == expectedCategories) {
+                        updateStatus(prefs, STATUS_SUCCESS, null);
+                        clearVerifyState(prefs);
+                        VERIFY_IN_FLIGHT.set(false);
+                        return;
+                    }
+                    retryOrFail(context, uid, prefs);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "checkRemoteCounts: server fetch failed", e);
+                    retryOrFail(context, uid, prefs);
+                });
+    }
+
+    private static void retryOrFail(Context context, String uid, SharedPreferences prefs) {
+        int attempts = prefs.getInt(KEY_CLOUD_BACKUP_VERIFY_ATTEMPTS, 0) + 1;
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt(KEY_CLOUD_BACKUP_VERIFY_ATTEMPTS, attempts);
+        editor.apply();
+        Log.d(TAG, "retryOrFail: attempt=" + attempts + "/" + VERIFY_MAX_ATTEMPTS);
+        if (attempts >= VERIFY_MAX_ATTEMPTS) {
+            updateStatus(prefs, STATUS_ERROR, "Sync timeout");
+            clearVerifyState(prefs);
+            VERIFY_IN_FLIGHT.set(false);
+            return;
+        }
+        VERIFY_IN_FLIGHT.set(false);
+        scheduleVerify(context.getApplicationContext(), uid, prefs, VERIFY_INTERVAL_MS);
+    }
+
+    private static void clearVerifyState(SharedPreferences prefs) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove(KEY_CLOUD_BACKUP_EXPECTED_RECORDS);
+        editor.remove(KEY_CLOUD_BACKUP_EXPECTED_CATEGORIES);
+        editor.remove(KEY_CLOUD_BACKUP_VERIFY_ATTEMPTS);
+        editor.apply();
     }
 }

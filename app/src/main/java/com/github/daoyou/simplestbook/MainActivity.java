@@ -97,8 +97,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 return true;
             } else if (item.getItemId() == R.id.action_cloud_status) {
-                Intent intent = new Intent(this, SettingsActivity.class);
-                startActivity(intent);
+                CloudBackupIndicator.showStatusSnackbar(this);
                 return true;
             }
             return false;
@@ -202,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
                         performDatabaseSave(amount, category, note, lat, lon);
                     }).addOnFailureListener(e -> performDatabaseSave(amount, category, note, 0.0, 0.0));
                 } else {
+                    Toast.makeText(this, "位置取得失敗", Toast.LENGTH_SHORT).show();
                     performDatabaseSave(amount, category, note, 0.0, 0.0);
                 }
             } else {
@@ -243,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
         loadCategories();
         amountInput.requestFocus();
         prefetchLocation();
+        CloudBackupManager.verifyPendingSync(getApplicationContext());
     }
 
     @Override

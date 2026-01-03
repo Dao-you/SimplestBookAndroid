@@ -1,6 +1,5 @@
 package com.github.daoyou.simplestbook;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -103,7 +102,7 @@ public class ManageCategoriesActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_cloud_status) {
-            startActivity(new Intent(this, SettingsActivity.class));
+            CloudBackupIndicator.showStatusSnackbar(this);
             return true;
         }
         return super.onOptionsItemSelected(item);
