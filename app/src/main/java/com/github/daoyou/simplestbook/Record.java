@@ -5,15 +5,17 @@ public class Record {
     private int amount;
     private String category;
     private String note;
+    private String locationName;
     private long timestamp;
     private double latitude;
     private double longitude;
 
-    public Record(String id, int amount, String category, String note, long timestamp, double latitude, double longitude) {
+    public Record(String id, int amount, String category, String note, String locationName, long timestamp, double latitude, double longitude) {
         this.id = id;
         this.amount = amount;
         this.category = category;
         this.note = note;
+        this.locationName = locationName;
         this.timestamp = timestamp;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -23,6 +25,7 @@ public class Record {
     public int getAmount() { return amount; }
     public String getCategory() { return category; }
     public String getNote() { return note; }
+    public String getLocationName() { return locationName; }
     public long getTimestamp() { return timestamp; }
     public double getLatitude() { return latitude; }
     public double getLongitude() { return longitude; }

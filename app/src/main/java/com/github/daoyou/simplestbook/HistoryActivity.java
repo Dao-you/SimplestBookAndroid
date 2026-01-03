@@ -90,7 +90,8 @@ public class HistoryActivity extends AppCompatActivity {
                 }
                 for (Record r : imported) {
                     // 修正：必須帶入匯入紀錄的 timestamp 參數
-                    dbHelper.insertRecord(r.getAmount(), r.getCategory(), r.getNote(), r.getTimestamp(), r.getLatitude(), r.getLongitude());
+                    dbHelper.insertRecord(r.getAmount(), r.getCategory(), r.getNote(), r.getLocationName(),
+                            r.getTimestamp(), r.getLatitude(), r.getLongitude());
                 }
                 CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
                 runOnUiThread(() -> {
@@ -155,6 +156,7 @@ public class HistoryActivity extends AppCompatActivity {
                 intent.putExtra("amount", selectedRecord.getAmount());
                 intent.putExtra("category", selectedRecord.getCategory());
                 intent.putExtra("note", selectedRecord.getNote());
+                intent.putExtra("locationName", selectedRecord.getLocationName());
                 intent.putExtra("timestamp", selectedRecord.getTimestamp());
                 intent.putExtra("latitude", selectedRecord.getLatitude());
                 intent.putExtra("longitude", selectedRecord.getLongitude());
@@ -176,11 +178,12 @@ public class HistoryActivity extends AppCompatActivity {
                         int amount = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_AMOUNT));
                         String category = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_CATEGORY));
                         String note = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_NOTE));
+                        String locationName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LOCATION_NAME));
                         long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TIMESTAMP));
                         double latitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LATITUDE));
                         double longitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LONGITUDE));
 
-                        tempRecords.add(new Record(id, amount, category, note, timestamp, latitude, longitude));
+                        tempRecords.add(new Record(id, amount, category, note, locationName, timestamp, latitude, longitude));
                         total += amount;
                     } while (cursor.moveToNext());
                 }

@@ -11,13 +11,14 @@ import java.util.UUID;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "SimplestBook.db";
-    private static final int DATABASE_VERSION = 7; // 增加版本號以加入座標欄位
+    private static final int DATABASE_VERSION = 8; // 增加版本號以加入地點備註欄位
 
     public static final String TABLE_RECORDS = "records";
     public static final String COLUMN_ID = "id";
     public static final String COLUMN_AMOUNT = "amount";
     public static final String COLUMN_CATEGORY = "category";
     public static final String COLUMN_NOTE = "note";
+    public static final String COLUMN_LOCATION_NAME = "location_name";
     public static final String COLUMN_TIMESTAMP = "timestamp";
     public static final String COLUMN_LATITUDE = "latitude";
     public static final String COLUMN_LONGITUDE = "longitude";
@@ -35,7 +36,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     COLUMN_NOTE + " TEXT, " +
                     COLUMN_TIMESTAMP + " INTEGER, " +
                     COLUMN_LATITUDE + " REAL, " +
-                    COLUMN_LONGITUDE + " REAL" +
+                    COLUMN_LONGITUDE + " REAL, " +
+                    COLUMN_LOCATION_NAME + " TEXT" +
                     ");";
 
     private static final String TABLE_CATEGORIES_CREATE =
@@ -75,10 +77,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertRecord(int amount, String category, String note, double latitude, double longitude) {
-        insertRecord(amount, category, note, System.currentTimeMillis(), latitude, longitude);
+        insertRecord(amount, category, note, "", System.currentTimeMillis(), latitude, longitude);
     }
 
-    public void insertRecord(int amount, String category, String note, long timestamp, double latitude, double longitude) {
+    public void insertRecord(int amount, String category, String note, String locationName, long timestamp, double latitude, double longitude) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_ID, UUID.randomUUID().toString());
@@ -88,11 +90,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_TIMESTAMP, timestamp);
         values.put(COLUMN_LATITUDE, latitude);
         values.put(COLUMN_LONGITUDE, longitude);
+        values.put(COLUMN_LOCATION_NAME, locationName);
         db.insert(TABLE_RECORDS, null, values);
         db.close();
     }
 
-    public void updateRecord(String id, int amount, String category, String note, long timestamp, double latitude, double longitude) {
+    public void updateRecord(String id, int amount, String category, String note, String locationName, long timestamp, double latitude, double longitude) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_AMOUNT, amount);
@@ -101,6 +104,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_TIMESTAMP, timestamp);
         values.put(COLUMN_LATITUDE, latitude);
         values.put(COLUMN_LONGITUDE, longitude);
+        values.put(COLUMN_LOCATION_NAME, locationName);
+        db.update(TABLE_RECORDS, values, COLUMN_ID + " = ?", new String[]{id});
+        db.close();
+    }
+
+    public void updateLocationName(String id, String locationName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_LOCATION_NAME, locationName);
         db.update(TABLE_RECORDS, values, COLUMN_ID + " = ?", new String[]{id});
         db.close();
     }
@@ -120,6 +132,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Cursor getAllRecords() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.query(TABLE_RECORDS, null, null, null, null, null, COLUMN_TIMESTAMP + " DESC");
+    }
+
+    public String getLocationNameById(String id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String locationName = null;
+        Cursor cursor = db.query(TABLE_RECORDS, new String[]{COLUMN_LOCATION_NAME}, COLUMN_ID + " = ?",
+                new String[]{id}, null, null, null);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                locationName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LOCATION_NAME));
+            }
+            cursor.close();
+        }
+        db.close();
+        return locationName;
     }
 
     public void insertCategory(String name, int order) {

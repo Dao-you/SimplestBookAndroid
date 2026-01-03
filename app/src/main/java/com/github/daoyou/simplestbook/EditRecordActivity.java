@@ -27,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -55,6 +56,7 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
 
     private DatabaseHelper dbHelper;
     private String recordId;
+    private String locationName;
     private CategoryAdapter categoryAdapter;
     private List<Category> categories;
     private Calendar calendar;
@@ -98,6 +100,7 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
             int amount = getIntent().getIntExtra("amount", 0);
             String category = getIntent().getStringExtra("category");
             String note = getIntent().getStringExtra("note");
+            locationName = getIntent().getStringExtra("locationName");
             long timestamp = getIntent().getLongExtra("timestamp", System.currentTimeMillis());
             latitude = getIntent().getDoubleExtra("latitude", 0.0);
             longitude = getIntent().getDoubleExtra("longitude", 0.0);
@@ -114,7 +117,7 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
             if (latitude != 0.0 || longitude != 0.0) {
                 mapContainer.setVisibility(View.VISIBLE);
                 
-                // 執行反向地理編碼取得地址
+                // 先顯示地點備註，沒有則顯示區域名稱
                 updateAddressLabel();
 
                 SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map_container_view);
@@ -128,6 +131,8 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
                     intent.putExtra("latitude", latitude);
                     intent.putExtra("longitude", longitude);
                     intent.putExtra("title", "$" + editAmountInput.getText() + " - " + editNoteInput.getText());
+                    intent.putExtra("recordId", recordId);
+                    intent.putExtra("locationName", locationName);
                     startActivity(intent);
                 });
             } else {
@@ -169,6 +174,10 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void updateAddressLabel() {
+        if (locationName != null && !locationName.trim().isEmpty()) {
+            textAddress.setText(locationName.trim());
+            return;
+        }
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         try {
             List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
@@ -217,7 +226,7 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     public void onMapReady(@NonNull GoogleMap googleMap) {
         LatLng location = new LatLng(latitude, longitude);
         googleMap.addMarker(new MarkerOptions().position(location).title("記帳位置"));
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f));
+        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(location, 15, 0, 0)));
         googleMap.getUiSettings().setAllGesturesEnabled(false);
     }
 
@@ -278,7 +287,10 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
                 return;
             }
 
-            dbHelper.updateRecord(recordId, amount, category, note, calendar.getTimeInMillis(), latitude, longitude);
+            String latestLocationName = dbHelper.getLocationNameById(recordId);
+            String safeLocationName = latestLocationName == null ? "" : latestLocationName;
+            dbHelper.updateRecord(recordId, amount, category, note, safeLocationName,
+                    calendar.getTimeInMillis(), latitude, longitude);
             CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
             Toast.makeText(this, "更新成功", Toast.LENGTH_SHORT).show();
             finish();
@@ -291,6 +303,21 @@ public class EditRecordActivity extends AppCompatActivity implements OnMapReadyC
     protected void onDestroy() {
         CloudBackupIndicator.unregister(this, backupIndicatorListener);
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (recordId == null) {
+            return;
+        }
+        String latest = dbHelper.getLocationNameById(recordId);
+        if (latest != null) {
+            locationName = latest;
+        }
+        if (latitude != 0.0 || longitude != 0.0) {
+            updateAddressLabel();
+        }
     }
 
     @Override

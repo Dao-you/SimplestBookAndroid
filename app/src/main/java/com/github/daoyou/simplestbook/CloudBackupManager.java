@@ -11,7 +11,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -204,6 +203,7 @@ public class CloudBackupManager {
                     record.put("timestamp", cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_TIMESTAMP)));
                     record.put("latitude", cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LATITUDE)));
                     record.put("longitude", cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LONGITUDE)));
+                    record.put("locationName", cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_LOCATION_NAME)));
                     records.add(record);
                 } while (cursor.moveToNext());
             }
@@ -246,6 +246,7 @@ public class CloudBackupManager {
             Integer amount = getInt(record.get("amount"));
             String category = getString(record.get("category"));
             String note = getString(record.get("note"));
+            String locationName = getString(record.get("locationName"));
             Long timestamp = getLong(record.get("timestamp"));
             Double latitude = getDouble(record.get("latitude"));
             Double longitude = getDouble(record.get("longitude"));
@@ -256,7 +257,8 @@ public class CloudBackupManager {
             long safeTimestamp = timestamp == null ? System.currentTimeMillis() : timestamp;
             double safeLat = latitude == null ? 0.0 : latitude;
             double safeLon = longitude == null ? 0.0 : longitude;
-            dbHelper.insertRecord(amount, category, note, safeTimestamp, safeLat, safeLon);
+            String safeLocationName = locationName == null ? "" : locationName;
+            dbHelper.insertRecord(amount, category, note, safeLocationName, safeTimestamp, safeLat, safeLon);
             restored++;
         }
         return restored;

@@ -35,8 +35,8 @@ public class CsvHelper {
      */
     public String generateCsvContent(List<Record> recordList) {
         StringBuilder csvContent = new StringBuilder();
-        // 標題列新增 time 於第一列: time,desc,cate,amount,location
-        csvContent.append("time,desc,cate,amount,location\n");
+        // 標題列: time,desc,cate,amount,location,location_name,id
+        csvContent.append("time,desc,cate,amount,location,location_name,id\n");
 
         Geocoder geocoder = new Geocoder(activity, Locale.TRADITIONAL_CHINESE);
 
@@ -61,12 +61,16 @@ public class CsvHelper {
             String note = record.getNote() != null ? record.getNote().replace(",", " ") : "";
             String category = record.getCategory() != null ? record.getCategory() : "";
 
-            csvContent.append(String.format("%d,%s,%s,%d,%s\n",
+            String locationName = record.getLocationName() != null ? record.getLocationName().replace(",", " ") : "";
+
+            csvContent.append(String.format("%d,%s,%s,%d,%s,%s,%s\n",
                     record.getTimestamp(),
                     note,
                     category,
                     record.getAmount(),
-                    addressStr));
+                    addressStr,
+                    locationName,
+                    record.getId() == null ? "" : record.getId()));
         }
         return csvContent.toString();
     }
@@ -112,6 +116,8 @@ public class CsvHelper {
                     } catch (NumberFormatException ignored) {}
 
                     String locationStr = parts.length > 4 ? parts[4].trim() : "";
+                    String locationName = parts.length > 5 ? parts[5].trim() : "";
+                    String id = parts.length > 6 ? parts[6].trim() : "";
                     double lat = 0, lng = 0;
 
                     // 嘗試將地址轉回經緯度
@@ -125,11 +131,13 @@ public class CsvHelper {
                         } catch (IOException ignored) {}
                     }
 
+                    String safeId = id.isEmpty() ? UUID.randomUUID().toString() : id;
                     importedRecords.add(new Record(
-                            UUID.randomUUID().toString(),
+                            safeId,
                             amount,
                             cate,
                             desc,
+                            locationName,
                             timestamp,
                             lat,
                             lng
