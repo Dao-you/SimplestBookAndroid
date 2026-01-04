@@ -120,7 +120,7 @@ Branch Neteork 圖 (待更新)
 1. 雲端備份功能運作流程
 
     ```mermaid
-    flowchart TD
+    graph TD
         subgraph Cloud["啟用與同步"]
             A["SettingsActivity 切換雲端備份 ON"] --> B["Google 登入 FirebaseAuth"]
             B --> C{"登入成功?"}
@@ -174,28 +174,25 @@ flowchart TD
 - 版面資源：`activity_main.xml`
 ```mermaid
 flowchart TD
-    A["onCreate() 綁定 UI+Toolbar"] --> B["loadCategories() 載入/預設類別"]
+    A["onCreate() 綁定 UI+Toolbar + 檢查定位權限"] --> B["loadCategories() 載入/預設類別"]
     B --> C["prefetchLocation() 預抓座標"]
-    A --> D["使用者輸入金額/備註"]
-    D --> E{"類別來源"}
-    E -->|"Grid 手動"| F["選擇類別"]
-    E -->|"預設自動"| G["saveWithPlaceholderThenAutoSelect()" ]
-    F --> H["saveRecord() 驗證欄位"]
-    G --> H
-    H --> I{"定位開啟?"}
+    C --> D["使用者輸入金額/備註後送出"]
+    D --> H["saveRecord() 驗證欄位"]
+    H --> E{{"類別來源"}}
+    E -->|"Grid 手動"| F["使用選擇的類別"]
+    F --> I{{"定位取得 getLastLocation()"}}
+    E -->|"AI 自動"| G["saveWithPlaceholderThenAutoSelect()" ]
     I -->|"預取成功"| J["使用預取座標寫入"]
-    I -->|"即時取得"| K["getLastLocation()/失敗 0,0"]
-    I -->|"關閉"| L["以 0,0 儲存"]
+    I -->|"關閉或失敗"| L["以 0,0 儲存"]
     J --> M["performDatabaseSave() 寫入 SQLite"]
-    K --> M
     L --> M
     M --> N["completeSave() 清空欄位"]
-    N --> O{"自動跳歷史?"}
+    N --> O{{"自動跳歷史?"}}
     O -->|"是"| P["startActivity(HistoryActivity)"]
-    O -->|"否"| Q["prefetchLocation() 再次預抓"]
+    O -->|"否"| D
     G --> R["AutoCategoryService.start() 背景分類"]
-    R --> S["廣播 ACTION_RECORD_UPDATED"]
-    S --> P
+    R --> Z["廣播 ACTION_RECORD_UPDATED"]
+    Z --> I
 ```
 
 ### `HistoryActivity.java`
@@ -212,7 +209,7 @@ flowchart TD
     A["onCreate() 綁定 Toolbar/ListView"] --> B["loadRecords() 背景查 SQLite"]
     B --> C["計算總額/筆數並更新卡片"]
     C --> D["setAdapter() 顯示 ListView"]
-    D --> E{"使用者操作"}
+    D --> E{{"使用者操作"}}
     E -->|"點擊項目"| F["開啟 EditRecordActivity"]
     E -->|"匯出分享"| G["CsvHelper.shareCsv()/exportToFile()"]
     E -->|"匯入"| H["CsvHelper.importCsv() 解析/寫入"]
@@ -232,13 +229,14 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["接收 Intent(id 等欄位)"] --> B["填入金額/備註/時間"]
-    B --> C{"是否有座標"}
+    B --> C{{"是否有座標"}}
     C -->|"有"| D["顯示地圖預覽 + 逆地理文字"]
     D --> E["點擊開啟 FullMapActivity"]
     C -->|"無"| F["隱藏地圖卡片"]
-    B --> G{"使用者操作"}
-    G -->|"修改"| H["handlePrimaryAction() 更新 SQLite"]
-    G -->|"未修改"| I["刪除確認 Dialog"]
+    E --> G{{"使用者操作"}}
+    F --> G
+    G -->|"修改並更新"| H["handlePrimaryAction() 更新 SQLite"]
+    G -->|"按下刪除按鈕"| I["刪除確認 Dialog"]
 ```
 
 ### `ChartActivity.java`
@@ -273,11 +271,10 @@ flowchart TD
 flowchart TD
     A["接收 Intent(recordId, lat, lng, name)"] --> B["onMapReady() 顯示 Marker"]
     B --> C["相機縮放/顯示名稱"]
-    C --> D{"點擊地點卡片?"}
-    D -->|"是"| E["showEditLocationDialog() 輸入備註"]
+    C --> D["點擊地點名稱卡片"]
+    D --> E["showEditLocationDialog() 輸入備註"]
     E --> F["DatabaseHelper.updateRecordLocationName()"]
-    F --> C
-    D -->|"否"| G["維持目前顯示"]
+    F --> D
 ```
 
 ### `SettingsActivity.java`
@@ -293,13 +290,6 @@ flowchart TD
 flowchart TD
     A["onCreate() 綁定所有 Switch/Input"] --> B["讀取 SharedPreferences" ]
     B --> C["即時 setOnCheckedChangeListener() 寫回偏好"]
-    C --> D{"需要登入雲端?"}
-    D -->|"是"| E["啟動 Google Sign-In 流程"]
-    E --> F{"FirebaseAuth 登入成功?"}
-    F -->|"是"| G["啟用 CloudBackup 同步/還原按鈕"]
-    F -->|"否"| H["顯示錯誤等待重試"]
-    C --> I["切換通知/週期性付款排程"]
-    I --> J["RecurringPaymentWorker/AlarmReceiver.schedule*"]
 ```
 
 ### `StatusChipService.java`
@@ -312,7 +302,7 @@ flowchart TD
 - 版面資源：`activity_status_chip.xml`
 ```mermaid
 flowchart TD
-    A["onStartCommand() 收到觸發"] --> B{"Overlay 權限?"}
+    A["onStartCommand() 收到觸發"] --> B{{"Overlay 權限?"}}
     B -->|"有"| C["背景讀取 getTotalAmount()"]
     B -->|"無"| D["顯示無法覆蓋訊息"]
     C --> E["WindowManager 顯示 Chip"]
@@ -329,13 +319,13 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["Service onStartCommand(recordId, amount, note, options)"] --> B["讀取 API Key/URL"]
-    B --> C["AutoCategoryClient.requestAutoCategory()"]
-    C --> D{"取得類別?"}
+    B --> C["呼叫 OpenAI API 推理類別"]
+    C --> D{{"取得類別?"}}
     D -->|"是"| E["updateRecordCategory() 寫回 SQLite"]
     D -->|"否"| F["回退預設 '其他'"]
-    E --> G["CloudBackupManager.requestSyncIfEnabled()"]
+    E --> G["觸發雲端同步"]
     F --> G
-    G --> H["sendBroadcast(ACTION_RECORD_UPDATED)"]
+    G --> H["廣播通知 UI 更新"]
 ```
 
 ### `AutoCategoryClient.java`
@@ -348,10 +338,11 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["normalizeApiUrl()/normalizeToken() 處理輸入"] --> B["requestOnce() 組 JSON 並送出"]
-    B --> C{"回應成功?"}
+    B --> C{{"回應成功?"}}
     C -->|"是"| D["parseCategoryFromResponse() 解析類別"]
-    C -->|"否"| E{"有備援模型?"}
+    C -->|"否"| E{{"有備援模型?"}}
     E -->|"是"| F["切換 fallback 後重試"]
+    F --> C
     E -->|"否"| G["回傳 null 表示失敗"]
 ```
 
