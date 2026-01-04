@@ -2,6 +2,7 @@ package com.github.daoyou.simplestbook;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,6 +24,9 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.radiobutton.MaterialRadioButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -50,7 +54,9 @@ public class SettingsActivity extends AppCompatActivity {
 
     public static final String PREFS_NAME = "SimplestBookSettings";
     public static final String KEY_LOCATION_ENABLED = "location_enabled";
-    public static final String KEY_DEFAULT_CATEGORY = "default_category"; // 0: First, 1: Other, 2: None
+    public static final String KEY_DEFAULT_CATEGORY = "default_category"; // 0: First, 1: Other, 2: None, 3: Auto
+    public static final String KEY_AUTO_CATEGORY_API_KEY = "auto_category_api_key";
+    public static final String KEY_AUTO_CATEGORY_API_URL = "auto_category_api_url";
     public static final String KEY_AUTO_HISTORY = "auto_history";
     public static final String KEY_THEME = "theme_mode"; // -1: System, 1: Light, 2: Dark
     public static final String KEY_CLOUD_BACKUP_ENABLED = "cloud_backup_enabled";
@@ -72,6 +78,15 @@ public class SettingsActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> googleSignInLauncher;
     private Runnable pendingSignInAction;
     private DatabaseHelper dbHelper;
+    private TextInputLayout inputLayoutApiKey;
+    private TextInputLayout inputLayoutApiUrl;
+    private TextInputEditText editApiKey;
+    private MaterialAutoCompleteTextView editApiUrl;
+    private MaterialButton buttonApiKeyHelp;
+    private MaterialRadioButton radioFirst;
+    private MaterialRadioButton radioOther;
+    private MaterialRadioButton radioNone;
+    private MaterialRadioButton radioAuto;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,9 +127,16 @@ public class SettingsActivity extends AppCompatActivity {
         RadioGroup radioGroupDefaultCategory = findViewById(R.id.radioGroupDefaultCategory);
         RadioGroup radioGroupTheme = findViewById(R.id.radioGroupTheme);
         
-        MaterialRadioButton radioFirst = findViewById(R.id.radioFirst);
-        MaterialRadioButton radioOther = findViewById(R.id.radioOther);
-        MaterialRadioButton radioNone = findViewById(R.id.radioNone);
+        radioFirst = findViewById(R.id.radioFirst);
+        radioOther = findViewById(R.id.radioOther);
+        radioNone = findViewById(R.id.radioNone);
+        radioAuto = findViewById(R.id.radioAuto);
+
+        inputLayoutApiKey = findViewById(R.id.inputLayoutApiKey);
+        inputLayoutApiUrl = findViewById(R.id.inputLayoutApiUrl);
+        editApiKey = findViewById(R.id.editApiKey);
+        editApiUrl = findViewById(R.id.editApiUrl);
+        buttonApiKeyHelp = findViewById(R.id.buttonApiKeyHelp);
         
         MaterialRadioButton radioThemeSystem = findViewById(R.id.radioThemeSystem);
         MaterialRadioButton radioThemeLight = findViewById(R.id.radioThemeLight);
@@ -199,6 +221,8 @@ public class SettingsActivity extends AppCompatActivity {
         if (radioFirst != null && defaultCat == 0) radioFirst.setChecked(true);
         else if (radioOther != null && defaultCat == 1) radioOther.setChecked(true);
         else if (radioNone != null && defaultCat == 2) radioNone.setChecked(true);
+        else if (radioAuto != null && defaultCat == 3) radioAuto.setChecked(true);
+        updateAutoCategoryInputs(defaultCat == 3);
 
         if (radioGroupDefaultCategory != null) {
             radioGroupDefaultCategory.setOnCheckedChangeListener((group, checkedId) -> {
@@ -206,11 +230,116 @@ public class SettingsActivity extends AppCompatActivity {
                 if (checkedId == R.id.radioFirst) value = 0;
                 else if (checkedId == R.id.radioOther) value = 1;
                 else if (checkedId == R.id.radioNone) value = 2;
+                else if (checkedId == R.id.radioAuto) value = 3;
                 prefs.edit().putInt(KEY_DEFAULT_CATEGORY, value).apply();
+                updateAutoCategoryInputs(value == 3);
+            });
+        }
+
+        if (editApiKey != null) {
+            editApiKey.setText(prefs.getString(KEY_AUTO_CATEGORY_API_KEY, ""));
+            editApiKey.addTextChangedListener(new android.text.TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+                @Override
+                public void afterTextChanged(android.text.Editable s) {
+                    prefs.edit().putString(KEY_AUTO_CATEGORY_API_KEY, s.toString()).apply();
+                }
+            });
+        }
+
+        if (editApiUrl != null) {
+            String defaultApiUrl = getString(R.string.default_openai_api_url);
+            String storedUrl = prefs.getString(KEY_AUTO_CATEGORY_API_URL, "");
+            if (storedUrl == null || storedUrl.trim().isEmpty()) {
+                storedUrl = defaultApiUrl;
+                prefs.edit().putString(KEY_AUTO_CATEGORY_API_URL, storedUrl).apply();
+            }
+            editApiUrl.setText(storedUrl);
+            android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+                    this,
+                    android.R.layout.simple_list_item_1,
+                    new String[]{
+                            getString(R.string.api_url_openai_label) + " - " + getString(R.string.default_openai_api_url),
+                            getString(R.string.api_url_github_label) + " - " + getString(R.string.default_github_models_api_url)
+                    });
+            editApiUrl.setAdapter(adapter);
+            editApiUrl.setOnItemClickListener((parent, view, position, id) -> {
+                String value = (String) parent.getItemAtPosition(position);
+                int index = value.indexOf(" - ");
+                if (index >= 0) {
+                    String url = value.substring(index + 3).trim();
+                    editApiUrl.setText(url);
+                    editApiUrl.setSelection(url.length());
+                    prefs.edit().putString(KEY_AUTO_CATEGORY_API_URL, url).apply();
+                }
+            });
+            editApiUrl.addTextChangedListener(new android.text.TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+                @Override
+                public void afterTextChanged(android.text.Editable s) {
+                    prefs.edit().putString(KEY_AUTO_CATEGORY_API_URL, s.toString()).apply();
+                }
+            });
+        }
+
+        if (buttonApiKeyHelp != null) {
+            buttonApiKeyHelp.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse(getString(R.string.api_key_help_url)));
+                startActivity(intent);
             });
         }
 
         updateCloudUi();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        enforceDefaultCategoryWhenMissingApi();
+    }
+
+    private void enforceDefaultCategoryWhenMissingApi() {
+        String apiKey = prefs.getString(KEY_AUTO_CATEGORY_API_KEY, "");
+        String apiUrl = prefs.getString(KEY_AUTO_CATEGORY_API_URL, "");
+        boolean missingApi = apiKey == null || apiKey.trim().isEmpty()
+                || apiUrl == null || apiUrl.trim().isEmpty();
+        if (!missingApi) {
+            return;
+        }
+        int current = prefs.getInt(KEY_DEFAULT_CATEGORY, 0);
+        if (current != 0) {
+            prefs.edit().putInt(KEY_DEFAULT_CATEGORY, 0).apply();
+            if (radioFirst != null) {
+                radioFirst.setChecked(true);
+            }
+            Toast.makeText(this, "已改回預設：第一項", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateAutoCategoryInputs(boolean enabled) {
+        if (inputLayoutApiKey != null) {
+            inputLayoutApiKey.setEnabled(enabled);
+        }
+        if (inputLayoutApiUrl != null) {
+            inputLayoutApiUrl.setEnabled(enabled);
+        }
+        if (editApiKey != null) {
+            editApiKey.setEnabled(enabled);
+        }
+        if (editApiUrl != null) {
+            editApiUrl.setEnabled(enabled);
+        }
     }
 
     @Override

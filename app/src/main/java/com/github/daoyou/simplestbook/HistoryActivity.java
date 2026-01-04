@@ -1,6 +1,9 @@
 package com.github.daoyou.simplestbook;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -13,6 +16,7 @@ import android.view.MenuItem;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -33,6 +37,7 @@ import java.util.List;
 
 public class HistoryActivity extends AppCompatActivity {
 
+    private static final String TAG = "HistoryActivity";
     private MaterialToolbar historyToolbar;
     private TextView totalAmountText;
     private MaterialCardView cardTotal;
@@ -45,6 +50,16 @@ public class HistoryActivity extends AppCompatActivity {
     private CsvHelper csvHelper;
     private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
     private MenuItem cloudStatusItem;
+    private boolean recordReceiverRegistered;
+    private final BroadcastReceiver recordUpdatedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "Received update broadcast");
+            String recordId = intent != null ? intent.getStringExtra("extra_record_id") : null;
+            String category = intent != null ? intent.getStringExtra("extra_category") : null;
+            loadRecords(recordId, category);
+        }
+    };
 
     // 處理「儲存到檔案」的回傳
     private final ActivityResultLauncher<Intent> saveFileLauncher =
@@ -144,6 +159,17 @@ public class HistoryActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        if (!recordReceiverRegistered) {
+            IntentFilter filter = new IntentFilter(AutoCategoryService.ACTION_RECORD_UPDATED);
+            androidx.core.content.ContextCompat.registerReceiver(
+                    this,
+                    recordUpdatedReceiver,
+                    filter,
+                    androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
+            recordReceiverRegistered = true;
+            Log.d(TAG, "Registered update receiver");
+        }
+
         // 讀取資料庫
         loadRecords();
 
@@ -163,9 +189,14 @@ public class HistoryActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
     }
 
     private void loadRecords() {
+        loadRecords(null, null);
+    }
+
+    private void loadRecords(String animateRecordId, String toastCategory) {
         new Thread(() -> {
             List<Record> tempRecords = new ArrayList<>();
             Cursor cursor = dbHelper.getAllRecords();
@@ -192,12 +223,59 @@ public class HistoryActivity extends AppCompatActivity {
 
             final int finalTotal = total;
             runOnUiThread(() -> {
-                recordList = tempRecords;
+                if (recordList == null) {
+                    recordList = new ArrayList<>();
+                }
+                recordList.clear();
+                recordList.addAll(tempRecords);
                 totalAmountText.setText("$ " + finalTotal);
-                adapter = new RecordAdapter(HistoryActivity.this, recordList);
-                historyListView.setAdapter(adapter);
+                if (adapter == null) {
+                    adapter = new RecordAdapter(HistoryActivity.this, recordList);
+                    historyListView.setAdapter(adapter);
+                } else {
+                    adapter.notifyDataSetChanged();
+                }
+                if (animateRecordId != null) {
+                    animateUpdatedRow(animateRecordId);
+                }
+                if (toastCategory != null && !toastCategory.isEmpty()) {
+                    Toast.makeText(this, "自動類別：" + toastCategory, Toast.LENGTH_SHORT).show();
+                }
             });
         }).start();
+    }
+
+    private void animateUpdatedRow(String recordId) {
+        int position = -1;
+        for (int i = 0; i < recordList.size(); i++) {
+            if (recordId.equals(recordList.get(i).getId())) {
+                position = i;
+                break;
+            }
+        }
+        if (position < 0) {
+            return;
+        }
+        int targetPosition = position;
+        historyListView.post(() -> {
+            int first = historyListView.getFirstVisiblePosition();
+            int last = historyListView.getLastVisiblePosition();
+            if (targetPosition < first || targetPosition > last) {
+                return;
+            }
+            android.view.View row = historyListView.getChildAt(targetPosition - first);
+            if (row == null) {
+                return;
+            }
+            float width = row.getWidth() > 0 ? row.getWidth() : historyListView.getWidth();
+            row.animate().cancel();
+            row.setTranslationX(width);
+            row.animate()
+                    .translationX(0f)
+                    .setDuration(260)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+        });
     }
 
     @Override
@@ -304,6 +382,10 @@ public class HistoryActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (recordReceiverRegistered) {
+            unregisterReceiver(recordUpdatedReceiver);
+            recordReceiverRegistered = false;
+        }
         CloudBackupIndicator.unregister(this, backupIndicatorListener);
         super.onDestroy();
     }

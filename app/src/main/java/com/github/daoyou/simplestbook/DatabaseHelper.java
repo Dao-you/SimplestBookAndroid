@@ -107,9 +107,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertRecord(int amount, String category, String note, String locationName, long timestamp, double latitude, double longitude) {
+        insertRecordAndReturnId(amount, category, note, locationName, timestamp, latitude, longitude);
+    }
+
+    public String insertRecordAndReturnId(int amount, String category, String note, String locationName,
+                                          long timestamp, double latitude, double longitude) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_ID, UUID.randomUUID().toString());
+        String recordId = UUID.randomUUID().toString();
+        values.put(COLUMN_ID, recordId);
         values.put(COLUMN_AMOUNT, amount);
         values.put(COLUMN_CATEGORY, category);
         values.put(COLUMN_NOTE, note);
@@ -119,6 +125,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_LOCATION_NAME, locationName);
         db.insert(TABLE_RECORDS, null, values);
         db.close();
+        return recordId;
     }
 
     public void updateRecord(String id, int amount, String category, String note, String locationName, long timestamp, double latitude, double longitude) {
@@ -131,6 +138,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_LATITUDE, latitude);
         values.put(COLUMN_LONGITUDE, longitude);
         values.put(COLUMN_LOCATION_NAME, locationName);
+        db.update(TABLE_RECORDS, values, COLUMN_ID + " = ?", new String[]{id});
+        db.close();
+    }
+
+    public void updateRecordCategory(String id, String category) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_CATEGORY, category);
         db.update(TABLE_RECORDS, values, COLUMN_ID + " = ?", new String[]{id});
         db.close();
     }

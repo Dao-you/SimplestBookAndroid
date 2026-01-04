@@ -26,7 +26,6 @@ import com.google.android.gms.location.Priority;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, MODE_PRIVATE);
+        ensureDefaultCategoryPreference();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -171,6 +171,12 @@ public class MainActivity extends AppCompatActivity {
         categoryGrid.setAdapter(categoryAdapter);
     }
 
+    private void ensureDefaultCategoryPreference() {
+        if (!prefs.contains(SettingsActivity.KEY_DEFAULT_CATEGORY)) {
+            prefs.edit().putInt(SettingsActivity.KEY_DEFAULT_CATEGORY, 0).apply();
+        }
+    }
+
     private void prefetchLocation() {
         if (!prefs.getBoolean(SettingsActivity.KEY_LOCATION_ENABLED, true)) return;
 
@@ -202,42 +208,80 @@ public class MainActivity extends AppCompatActivity {
             int amount = Integer.parseInt(amountStr);
             String category = categoryAdapter.getSelectedCategoryName();
             if (category == null || category.isEmpty()) {
+                int defaultType = prefs.getInt(SettingsActivity.KEY_DEFAULT_CATEGORY, 0);
+                if (defaultType == 3) {
+                    saveWithPlaceholderThenAutoSelect(amount, note);
+                    return;
+                }
                 Toast.makeText(this, "請選擇類別", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            if (prefs.getBoolean(SettingsActivity.KEY_LOCATION_ENABLED, true)) {
-                if (preFetchedLat != 0.0) {
-                    performDatabaseSave(amount, category, note, preFetchedLat, preFetchedLon);
-                } else if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-                        double lat = 0.0, lon = 0.0;
-                        if (location != null) {
-                            lat = location.getLatitude();
-                            lon = location.getLongitude();
-                        }
-                        performDatabaseSave(amount, category, note, lat, lon);
-                    }).addOnFailureListener(e -> performDatabaseSave(amount, category, note, 0.0, 0.0));
-                } else {
-                    Toast.makeText(this, "位置取得失敗", Toast.LENGTH_SHORT).show();
-                    performDatabaseSave(amount, category, note, 0.0, 0.0);
-                }
-            } else {
-                // 定位關閉時直接存入 0,0
-                performDatabaseSave(amount, category, note, 0.0, 0.0);
-            }
+            saveRecordWithCategory(amount, category, note);
 
         } catch (NumberFormatException e) {
             Toast.makeText(this, "金額格式錯誤", Toast.LENGTH_SHORT).show();
         }
     }
 
+    private void saveRecordWithCategory(int amount, String category, String note) {
+        saveRecordWithCategory(amount, category, note, null);
+    }
+
+    private void saveWithPlaceholderThenAutoSelect(int amount, String note) {
+        List<String> options = new ArrayList<>();
+        for (Category category : categories) {
+            options.add(category.getName());
+        }
+        String placeholder = "其他";
+        categoryAdapter.setSelectedCategory(placeholder);
+        saveRecordWithCategory(amount, placeholder, note, recordId -> {
+            AutoCategoryService.start(this, recordId, amount, note, new ArrayList<>(options));
+        });
+    }
+
+    private void saveRecordWithCategory(int amount, String category, String note, SaveCallback callback) {
+        if (prefs.getBoolean(SettingsActivity.KEY_LOCATION_ENABLED, true)) {
+            if (preFetchedLat != 0.0) {
+                performDatabaseSave(amount, category, note, preFetchedLat, preFetchedLon, callback);
+            } else if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+                    double lat = 0.0, lon = 0.0;
+                    if (location != null) {
+                        lat = location.getLatitude();
+                        lon = location.getLongitude();
+                    }
+                    performDatabaseSave(amount, category, note, lat, lon, callback);
+                }).addOnFailureListener(e -> performDatabaseSave(amount, category, note, 0.0, 0.0, callback));
+            } else {
+                Toast.makeText(this, "位置取得失敗", Toast.LENGTH_SHORT).show();
+                performDatabaseSave(amount, category, note, 0.0, 0.0, callback);
+            }
+        } else {
+            // 定位關閉時直接存入 0,0
+            performDatabaseSave(amount, category, note, 0.0, 0.0, callback);
+        }
+    }
+
     private void performDatabaseSave(int amount, String category, String note, double lat, double lon) {
+        performDatabaseSave(amount, category, note, lat, lon, null);
+    }
+
+    private void performDatabaseSave(int amount, String category, String note, double lat, double lon, SaveCallback callback) {
         new Thread(() -> {
-            dbHelper.insertRecord(amount, category, note, lat, lon);
+            String recordId = dbHelper.insertRecordAndReturnId(
+                    amount, category, note, "", System.currentTimeMillis(), lat, lon);
             CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
-            runOnUiThread(this::completeSave);
+            runOnUiThread(() -> {
+                completeSave();
+                if (callback != null) {
+                    callback.onSaved(recordId);
+                }
+            });
         }).start();
+    }
+
+    private interface SaveCallback {
+        void onSaved(String recordId);
     }
 
     private void completeSave() {
@@ -245,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
         noteInput.setText("");
         preFetchedLat = 0.0;
         preFetchedLon = 0.0;
-        Toast.makeText(this, "已儲存", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "已儲存", Toast.LENGTH_SHORT).show();
 
         if (prefs.getBoolean(SettingsActivity.KEY_AUTO_HISTORY, true)) {
             Intent intent = new Intent(this, HistoryActivity.class);

@@ -1,6 +1,12 @@
 <resources>
     <string name="app_name">Simplest Book</string>
     <string name="status_chip_total">累積金額：$ %1$d</string>
+    <string name="default_openai_api_url">https://api.openai.com/v1/chat/completions</string>
+    <string name="default_github_models_api_url">https://models.github.ai/inference/chat/completions</string>
+    <string name="api_key_help_url">https://platform.openai.com/account/api-keys</string>
+    <string name="api_key_help_button">如何取得 API Key</string>
+    <string name="api_url_openai_label">OpenAI 官方</string>
+    <string name="api_url_github_label">GitHub Models</string>
     <string-array name="recurring_frequency_labels">
         <item>每週</item>
         <item>每月</item>
