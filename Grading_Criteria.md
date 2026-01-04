@@ -40,54 +40,107 @@ Branch Neteork 圖 (待更新)
 
     ```mermaid
     flowchart TD
-        A[使用者開啟主畫面] --> B[輸入金額與備註]
-        B --> C{選擇類別方式}
-        C -->|手動選擇| D[可選類別 GridView]
-        C -->|自動分類| E[先以「其他」存入]
-        D --> F[定位預擷取/取得座標]
-        E --> F
-        F --> G[寫入 SQLite]
-        G --> H[觸發雲端同步]
-        H --> I{是否自動進歷史頁}
-        I -->|是| J[顯示歷史清單]
-        I -->|否| K[留在主畫面等待下一筆]
-        E --> L[啟動 AutoCategoryService]
-        L --> M[API 自動分類]
-        M --> N[更新 SQLite 類別]
-        N --> O[廣播通知 UI]
-        O --> J
-        P[使用者離開 App] --> Q[啟動 StatusChipService]
-        Q --> R[Overlay 顯示總額]
+        subgraph U["使用者前景流程"]
+            UA["啟動 App (SimplestBookApplication)"] --> UB["MainActivity.onCreate() 初始 UI/偏好"]
+            UB --> UC["loadCategories() 從 SQLite 讀取類別+預設選取"]
+            UB --> UD["checkPermission() 申請定位/通知"]
+            UB --> UE["prefetchLocation() 預抓座標"]
+            UE --> UF{ "定位成功?" }
+            UF -->|"是"| UG["暫存經緯度供寫入"]
+            UF -->|"否"| UH["維持 0,0 座標"]
+            UI["輸入金額/備註"] --> UJ{ "類別來源" }
+            UJ -->|"Grid 手動"| UK["選取類別並更新 Adapter"]
+            UJ -->|"預設=自動"| UL["saveWithPlaceholderThenAutoSelect() 先存 '其他'"]
+            UK --> UM["saveRecord() 驗證金額/備註"]
+            UL --> UM
+            UM --> UN{ "定位開啟?" }
+            UN -->|"開啟且已預取"| UO["使用預取座標寫入"]
+            UN -->|"需即時取得"| UP["getLastLocation() 取得/失敗 fallback"]
+            UN -->|"未開啟"| UQ["直接以 0,0 儲存"]
+            UO --> UR["performDatabaseSave() 寫入 SQLite"]
+            UP --> UR
+            UQ --> UR
+            UR --> US["completeSave() 清空欄位/重新預抓"]
+            US --> UT{ "自動跳歷史頁?" }
+            UT -->|"是"| UU["開啟 HistoryActivity"]
+            UT -->|"否"| UV["停留主畫面等待下一筆"]
+            UL --> UW["AutoCategoryService.start() 背景分類"]
+        end
+
+        subgraph B["背景/輔助服務"]
+            UW --> BX["AutoCategoryClient 呼叫 API"]
+            BX --> BY{ "回傳類別" }
+            BY -->|"成功"| BZ["更新 SQLite 類別並觸發 CloudBackup"]
+            BY -->|"失敗"| BZA["回退 '其他' 並同步"]
+            BZ --> BZB["Broadcast ACTION_RECORD_UPDATED" ]
+            BZB --> UU
+
+            UR --> CA["CloudBackupManager.requestSyncIfEnabled()"]
+            CA --> CB["FirebaseAuth 取使用者"]
+            CB --> CC{ "已登入?" }
+            CC -->|"是"| CD["讀取 records/categories/recurring 並上傳 Firestore"]
+            CC -->|"否"| CE["標記錯誤並等待登入"]
+            CD --> CF["scheduleVerify() 驗證筆數"]
+
+            UG --> CG["StatusChipService (離開 App)"]
+            UV --> CG
+            CG --> CH["查詢 getTotalAmount() 並顯示 Overlay"]
+
+            UB --> CI["RecurringPaymentWorker.schedule()/AlarmReceiver.scheduleAllMinute()"]
+            CI --> CJ["每日 WorkManager + 每分鐘 Alarm 插入到期紀錄"]
+            CJ --> CA
+        end
+
+        subgraph S["設定/權限入口"]
+            SK["SettingsActivity 切換定位/預設類別/自動歷史"] --> UB
+            SK --> SL["設定 Google 登入與雲端備份開關"] --> CA
+            SK --> SM["填入自動分類 API Key/URL"] --> UW
+        end
     ```
 
 1. 週期性付款功能運作流程
 
     ```mermaid
     flowchart TD
-        A[進入週期性付款頁] --> B[新增/編輯週期性項目]
-        B --> C[寫入 SQLite recurring_payments]
-        C --> D[排程 WorkManager 每日檢查]
-        C --> E[排程 AlarmManager 每分鐘模式]
-        D --> F[到期判斷]
-        F --> G[自動新增記帳紀錄]
-        G --> H[發送通知]
-        E --> I[每分鐘觸發]
-        I --> G
+        A["RecurringPaymentActivity 開啟"] --> B["新增/編輯項目 (RecurringPaymentEditActivity)"]
+        B --> C["save() 寫入 SQLite recurring_payments"]
+        C --> D{ "頻率類型" }
+        D -->|"daily/weekly/monthly"| E["RecurringPaymentWorker.schedule() 排 WorkManager"]
+        D -->|"minute"| F["RecurringPaymentAlarmReceiver.scheduleAllMinute() 排 Alarm"]
+        E --> G["每日觸發 doWork() 檢查 lastRunAt"]
+        F --> H["每分鐘 onReceive() 判斷 minute 項目"]
+        G --> I{ "到期?" }
+        H --> I
+        I -->|"是"| J["insertRecordAndReturnId() 寫入紀錄"]
+        J --> K["Notification 發送已新增紀錄" ]
+        K --> L["CloudBackupManager.requestSyncIfEnabled() 同步"]
+        I -->|"否"| M["重新排程等待下一次"]
     ```
-    
+
 1. 雲端備份功能運作流程
 
     ```mermaid
     flowchart TD
-        A[啟用雲端備份] --> B[Google 登入]
-        B --> C[同步觸發]
-        C --> D[讀取 SQLite 記帳/類別/週期性]
-        D --> E[上傳 Firestore]
-        E --> F[驗證筆數]
-        F --> G[更新同步狀態]
-        H[手動還原] --> I[讀取 Firestore 最新備份]
-        I --> J[覆蓋/加入 SQLite]
-        J --> K[重新排程週期性工作]
+        subgraph Cloud["啟用與同步"]
+            A["SettingsActivity 切換雲端備份 ON"] --> B["Google 登入 FirebaseAuth"]
+            B --> C{ "登入成功?" }
+            C -->|"是"| D["CloudBackupManager.syncNow()" ]
+            C -->|"否"| E["updateStatus(ERROR) 等待使用者重試"]
+            D --> F["readRecords()/readCategories()/readRecurring()" ]
+            F --> G["Firestore backups/latest set(payload)"]
+            G --> H["scheduleVerify() 依筆數驗證" ]
+            H --> I{ "筆數符合?" }
+            I -->|"是"| J["updateStatus(SUCCESS)" ]
+            I -->|"否"| K["重試驗證或標記 ERROR"]
+        end
+        subgraph Restore["還原流程"]
+            L["使用者點擊手動還原"] --> M["restoreFromCloud() 下載最新備份"]
+            M --> N{ "資料存在?" }
+            N -->|"有"| O["背景執行 restoreRecords()/restoreCategories()/restoreRecurring()" ]
+            O --> P["updateStatus(SUCCESS) 並回呼 UI" ]
+            P --> Q["重新排程 WorkManager/Alarm"]
+            N -->|"無"| R["updateStatus(ERROR: empty backup)"]
+        end
     ```
 
 ---
@@ -102,8 +155,9 @@ Branch Neteork 圖 (待更新)
 - 資料/資源：無直接資料存取，僅進行 UI 主題初始化。
 ```mermaid
 flowchart TD
-    A[App 啟動] --> B[onCreate()]
-    B --> C[DynamicColors.applyToActivitiesIfAvailable]
+    A["App 啟動"] --> B["onCreate() 呼叫 Application"]
+    B --> C["DynamicColors.applyToActivitiesIfAvailable() 套用色彩"]
+    C --> D["所有 Activity 綁定動態主題"]
 ```
 
 ### `MainActivity.java`
@@ -120,12 +174,28 @@ flowchart TD
 - 版面資源：`activity_main.xml`
 ```mermaid
 flowchart TD
-    A[輸入金額/備註] --> B{選擇類別}
-    B -->|手動| C[取得定位]
-    B -->|自動| D[先存其他]
-    C --> E[SQLite 寫入]
-    D --> E
-    E --> F[雲端同步/清空欄位]
+    A["onCreate() 綁定 UI+Toolbar"] --> B["loadCategories() 載入/預設類別"]
+    B --> C["prefetchLocation() 預抓座標"]
+    A --> D["使用者輸入金額/備註"]
+    D --> E{ "類別來源" }
+    E -->|"Grid 手動"| F["選擇類別"]
+    E -->|"預設自動"| G["saveWithPlaceholderThenAutoSelect()" ]
+    F --> H["saveRecord() 驗證欄位"]
+    G --> H
+    H --> I{ "定位開啟?" }
+    I -->|"預取成功"| J["使用預取座標寫入"]
+    I -->|"即時取得"| K["getLastLocation()/失敗 0,0"]
+    I -->|"關閉"| L["以 0,0 儲存"]
+    J --> M["performDatabaseSave() 寫入 SQLite"]
+    K --> M
+    L --> M
+    M --> N["completeSave() 清空欄位"]
+    N --> O{ "自動跳歷史?" }
+    O -->|"是"| P["startActivity(HistoryActivity)"]
+    O -->|"否"| Q["prefetchLocation() 再次預抓"]
+    G --> R["AutoCategoryService.start() 背景分類"]
+    R --> S["廣播 ACTION_RECORD_UPDATED"]
+    S --> P
 ```
 
 ### `HistoryActivity.java`
@@ -139,9 +209,14 @@ flowchart TD
 - 版面資源：`activity_history.xml`
 ```mermaid
 flowchart TD
-    A[onCreate] --> B[讀取 SQLite]
-    B --> C[ListView 顯示]
-    D[接收廣播] --> B
+    A["onCreate() 綁定 Toolbar/ListView"] --> B["loadRecords() 背景查 SQLite"]
+    B --> C["計算總額/筆數並更新卡片"]
+    C --> D["setAdapter() 顯示 ListView"]
+    D --> E{ "使用者操作" }
+    E -->|"點擊項目"| F["開啟 EditRecordActivity"]
+    E -->|"匯出分享"| G["CsvHelper.shareCsv()/exportToFile()"]
+    E -->|"匯入"| H["CsvHelper.importCsv() 解析/寫入"]
+    I["Broadcast ACTION_RECORD_UPDATED"] --> B
 ```
 
 ### `EditRecordActivity.java`
@@ -156,10 +231,14 @@ flowchart TD
 - 版面資源：`activity_edit_record.xml`
 ```mermaid
 flowchart TD
-    A[載入 Intent 紀錄] --> B[顯示欄位]
-    B --> C{是否編輯}
-    C -->|更新| D[更新 SQLite]
-    C -->|未改| E[刪除確認]
+    A["接收 Intent(id 等欄位)"] --> B["填入金額/備註/時間"]
+    B --> C{ "是否有座標" }
+    C -->|"有"| D["顯示地圖預覽 + 逆地理文字"]
+    D --> E["點擊開啟 FullMapActivity"]
+    C -->|"無"| F["隱藏地圖卡片"]
+    B --> G{ "使用者操作" }
+    G -->|"修改"| H["handlePrimaryAction() 更新 SQLite"]
+    G -->|"未修改"| I["刪除確認 Dialog"]
 ```
 
 ### `ChartActivity.java`
@@ -450,26 +529,28 @@ flowchart TD
 
 ## 六、使用課堂上所學技術說明
 
-以下重新整理技術分類，補上使用位置、觸發流程與上下文說明。
+以下重新整理技術分類，補上使用位置、觸發流程與上下文說明，並引用實作程式碼片段呈現完整脈絡。
 
 ### （一）使用到的外部 API 技術（10 分）
 
 - API 名稱：OpenAI API（亦支援 GitHub Models URL）
 - 使用位置：AutoCategoryClient.java、AutoCategoryService.java
-- 觸發流程：主畫面存檔且預設類別為「自動」。
-  → 先存「其他」再由服務呼叫 API。
-- 程式碼（服務呼叫 + API 請求）：
+- 觸發流程：主畫面預設類別設為自動時，`saveWithPlaceholderThenAutoSelect()` 先把紀錄以「其他」存入資料庫，再交給 `AutoCategoryService.start()` 進入背景呼叫 API；回傳後寫回類別並觸發雲端同步與廣播通知。
+- 程式碼（服務啟動 + API 請求 + 寫回）：
 ```java
-// AutoCategoryService.java
+// MainActivity.java - 將資料交給背景分類
+saveRecordWithCategory(amount, placeholder, note, recordId -> {
+    AutoCategoryService.start(this, recordId, amount, note, new ArrayList<>(options));
+});
+
+// AutoCategoryService.java - 背景取得結果並寫回
 String selected = AutoCategoryClient.requestAutoCategory(
         prefs, apiKey, apiUrl, amount, note, optionList);
+dbHelper.updateRecordCategory(recordId, selected);
+CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
+sendBroadcast(updateIntent);
 ```
-```java
-// AutoCategoryClient.java
-connection.setRequestProperty("Authorization", "Bearer " + token);
-body.addProperty("model", model);
-```
-- 說明：API 回傳 JSON 後解析類別；若模型不可用會自動切換。
+- 說明：`AutoCategoryClient` 會根據 API URL/Token 組合請求、在模型不可用時嘗試備援模型，再將解析的類別更新 SQLite，確保前景 UI 透過廣播即時刷新分類結果。
 
 ---
 
@@ -477,18 +558,28 @@ body.addProperty("model", model);
 
 - 使用位置：AutoCategoryService.java、HistoryActivity.java
 - 觸發流程：背景分類完成後送廣播，歷史頁收到後重讀資料。
-- 程式碼（發送 + 接收）：
+- 程式碼（發送 + 接收 + 重新載入）：
 ```java
-// AutoCategoryService.java
-Intent updateIntent = new Intent(AutoCategoryService.ACTION_RECORD_UPDATED);
+// AutoCategoryService.java - 寫回後廣播給前景頁面
+Intent updateIntent = new Intent(ACTION_RECORD_UPDATED);
+updateIntent.putExtra("extra_record_id", recordId);
+updateIntent.putExtra("extra_category", selected);
 sendBroadcast(updateIntent);
-```
-```java
-// HistoryActivity.java
+
+// HistoryActivity.java - 註冊並依 recordId 重載資料
 IntentFilter filter = new IntentFilter(AutoCategoryService.ACTION_RECORD_UPDATED);
 ContextCompat.registerReceiver(this, recordUpdatedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+
+private final BroadcastReceiver recordUpdatedReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String recordId = intent != null ? intent.getStringExtra("extra_record_id") : null;
+        String category = intent != null ? intent.getStringExtra("extra_category") : null;
+        loadRecords(recordId, category);
+    }
+};
 ```
-- 說明：廣播避免 UI 忙碌輪詢，且可精準更新單筆。
+- 說明：廣播攜帶紀錄 ID 與新類別，歷史頁依參數決定動畫與提示訊息，避免輪詢資料庫並能精準刷新單筆項目。
 
 ---
 
@@ -496,17 +587,22 @@ ContextCompat.registerReceiver(this, recordUpdatedReceiver, filter, ContextCompa
 
 - 使用位置：DatabaseHelper.java（記帳/類別/週期性三張表）
 - 觸發流程：存檔、編輯、刪除、匯入皆呼叫 CRUD。
-- 程式碼（建表 + 寫入）：
+- 程式碼（建表 + 寫入 + 取總額）：
 ```java
-// DatabaseHelper.java
+// DatabaseHelper.java - onCreate() 建立三張表並塞預設類別
 db.execSQL(TABLE_RECORDS_CREATE);
 db.execSQL(TABLE_CATEGORIES_CREATE);
+db.execSQL(TABLE_RECURRING_CREATE);
+seedCategories(db);
+
+// MainActivity.java - performDatabaseSave() 背景執行寫入
+String recordId = dbHelper.insertRecordAndReturnId(
+        amount, category, note, "", System.currentTimeMillis(), lat, lon);
+
+// DatabaseHelper.java - getTotalAmount() 給離開提示使用
+public int getTotalAmount() { ... }
 ```
-```java
-// MainActivity.java
-dbHelper.insertRecord(amount, category, note, "", System.currentTimeMillis(), 0.0, 0.0);
-```
-- 說明：本機 SQLite 提供離線可用與快速查詢。
+- 說明：SQLiteOpenHelper 封裝表結構與 CRUD，主畫面寫入與匯入 CSV 都共用同一個 helper，離線也能快速查詢並提供離開時的總額提示。
 
 ---
 
@@ -516,14 +612,25 @@ dbHelper.insertRecord(amount, category, note, "", System.currentTimeMillis(), 0.
 - 觸發流程：載入資料後綁定 Adapter，點擊項目觸發行為。
 - 程式碼：
 ```java
-// MainActivity.java
+// MainActivity.java - 類別選擇 Grid
+categoryAdapter = new CategoryAdapter(this, categories);
 categoryGrid.setAdapter(categoryAdapter);
-```
-```java
-// HistoryActivity.java
+categoryGrid.setOnItemClickListener((parent, view, position, id) -> {
+    String selectedName = categories.get(position).getName();
+    categoryAdapter.setSelectedCategory(selectedName);
+});
+
+// HistoryActivity.java - 歷史紀錄 ListView
 historyListView.setAdapter(adapter);
+historyListView.setOnItemClickListener((parent, view, position, id) -> {
+    Record selectedRecord = recordList.get(position);
+    Intent intent = new Intent(this, EditRecordActivity.class);
+    intent.putExtra("id", selectedRecord.getId());
+    ...
+    startActivity(intent);
+});
 ```
-- 說明：Grid 顯示類別，List 顯示記帳與週期性項目。
+- 說明：GridView 以顏色框線呈現選取狀態，ListView 則讓使用者點擊進入編輯或匯出匯入，維持簡潔但可快速操作的 UI 流程。
 
 ---
 
@@ -533,15 +640,25 @@ historyListView.setAdapter(adapter);
 - 觸發流程：存檔時取得座標；編輯頁/地圖頁顯示 Marker。
 - 程式碼：
 ```java
-// MainActivity.java
+// MainActivity.java - 預抓或即時取得位置並寫入
 fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-        .addOnSuccessListener(location -> { ... });
-```
-```java
-// FullMapActivity.java
+        .addOnSuccessListener(location -> {
+            if (location != null) {
+                preFetchedLat = location.getLatitude();
+                preFetchedLon = location.getLongitude();
+            }
+        });
+fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+    double lat = 0.0, lon = 0.0;
+    if (location != null) { lat = location.getLatitude(); lon = location.getLongitude(); }
+    performDatabaseSave(amount, category, note, lat, lon, callback);
+});
+
+// FullMapActivity.java - 以座標顯示地圖並允許編輯備註
 googleMap.addMarker(new MarkerOptions().position(location).title("位置"));
+locationNameView.setOnClickListener(v -> showEditLocationDialog());
 ```
-- 說明：定位寫入紀錄，地圖提供位置視覺化。
+- 說明：定位流程同時支援預抓與即時 fallback，確保低延遲寫入；地圖頁再以 Marker 與地點備註呈現實際位置。
 
 ---
 
@@ -551,12 +668,24 @@ googleMap.addMarker(new MarkerOptions().position(location).title("位置"));
 - 觸發流程：依使用者操作切換頁面並傳遞紀錄欄位。
 - 程式碼：
 ```java
-// HistoryActivity.java
+// MainActivity.java - Toolbar 導航設定/週期性付款
+recurringFab.setOnClickListener(v -> {
+    Intent intent = new Intent(this, RecurringPaymentActivity.class);
+    startActivityWithExitSkip(intent);
+});
+
+// HistoryActivity.java - 點擊紀錄帶完整欄位進入編輯
 Intent intent = new Intent(this, EditRecordActivity.class);
 intent.putExtra("id", selectedRecord.getId());
+intent.putExtra("amount", selectedRecord.getAmount());
+intent.putExtra("category", selectedRecord.getCategory());
+intent.putExtra("note", selectedRecord.getNote());
+intent.putExtra("timestamp", selectedRecord.getTimestamp());
+intent.putExtra("latitude", selectedRecord.getLatitude());
+intent.putExtra("longitude", selectedRecord.getLongitude());
 startActivity(intent);
 ```
-- 說明：Intent 內攜帶資料，避免重複查詢。
+- 說明：Intent 夾帶完整欄位，避免重複查詢並讓編輯畫面能直接呈現原始內容，同時維持快速在多個 Activity 間跳轉。
 
 ---
 
@@ -566,14 +695,22 @@ startActivity(intent);
 - 觸發流程：存檔後自動分類、離開 App 顯示總額。
 - 程式碼：
 ```java
-// AutoCategoryService.java
-context.startService(intent);
+// AutoCategoryService.java - Executor 背景呼叫 API 與資料庫
+executor.execute(() -> {
+    String selected = AutoCategoryClient.requestAutoCategory(...);
+    dbHelper.updateRecordCategory(recordId, selected);
+    CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
+    sendBroadcast(updateIntent);
+    stopSelf(startId);
+});
+
+// StatusChipService.java - 背景查詢總額後顯示 Overlay
+new Thread(() -> {
+    int total = dbHelper.getTotalAmount();
+    handler.post(() -> showOverlay(total));
+}).start();
 ```
-```java
-// StatusChipService.java
-showOverlay(total);
-```
-- 說明：服務讓耗時工作不阻塞 UI。
+- 說明：將網路請求與資料庫操作放入背景執行緒或服務，避免主執行緒卡住；離開 App 仍能顯示總額提示，加強體驗。
 
 ---
 
@@ -583,16 +720,25 @@ showOverlay(total);
 - 觸發流程：輸入驗證、刪除確認、匯入結果提示。
 - 程式碼：
 ```java
-// MainActivity.java
-Toast.makeText(this, "請輸入金額", Toast.LENGTH_SHORT).show();
-```
-```java
-// EditRecordActivity.java
+// MainActivity.java - 未填金額立即提示
+if (amountStr.isEmpty()) {
+    Toast.makeText(this, "請輸入金額", Toast.LENGTH_SHORT).show();
+    return;
+}
+
+// HistoryActivity.java - 匯入/匯出結果提示與選擇
+new MaterialAlertDialogBuilder(this)
+        .setTitle("匯入選項")
+        .setItems(options, (dialog, which) -> { ... })
+        .setNegativeButton("取消", null)
+        .show();
+
+// EditRecordActivity.java - 刪除確認對話框
 new MaterialAlertDialogBuilder(this)
         .setTitle("確認刪除")
-        .setPositiveButton("刪除", (dialog, which) -> { ... })
+        .setPositiveButton("刪除", (dialog, which) -> delete());
 ```
-- 說明：Toast 提示操作結果，Dialog 用於不可逆操作確認。
+- 說明：Toast 用於即時輸入驗證或匯入狀態，Dialog 則在匯入、刪除或選擇動作時提供互動選項，降低誤觸風險。
 
 ---
 
@@ -604,25 +750,43 @@ new MaterialAlertDialogBuilder(this)
 - 使用情境：使用者離開 App 時短暫顯示總額。
 - 程式碼：
 ```java
+// StatusChipService.java - 在背景查詢後動態建立 Overlay
+int total = dbHelper.getTotalAmount();
+View overlayView = LayoutInflater.from(this).inflate(R.layout.activity_status_chip, null);
+textTotal.setText(String.valueOf(total));
 windowManager.addView(overlayView, params);
+handler.postDelayed(() -> windowManager.removeView(overlayView), 5000);
 ```
-- 說明：使用系統層視窗，離開也能顯示。
+- 說明：使用系統層視窗呈現非互動狀態條，並在 5 秒後自動移除，讓使用者即使離開主畫面也能快速得知目前累計金額。
 
 ---
 
 ### （二）課外技術二：Firebase + Google Auth
 
 - 使用位置：SettingsActivity.java、CloudBackupManager.java
-- 使用情境：使用者啟用雲端備份並登入 Google。
+- 使用情境：使用者啟用雲端備份並登入 Google 之後，才能將記帳資料同步到 Firestore 或從雲端還原。
 - 程式碼：
 ```java
-firebaseAuth.signInWithCredential(GoogleAuthProvider.getCredential(account.getIdToken(), null));
+// SettingsActivity.java - 按鈕觸發 Google Sign-In
+googleSignInLauncher = registerForActivityResult(
+        new ActivityResultContracts.StartActivityForResult(),
+        result -> handleGoogleSignInResult(result.getData())
+);
+
+// handleGoogleSignInResult() 取得帳號後與 FirebaseAuth 交換憑證
+firebaseAuth.signInWithCredential(GoogleAuthProvider.getCredential(account.getIdToken(), null))
+        .addOnSuccessListener(authResult -> CloudBackupManager.syncNow(this));
+
+// CloudBackupManager.java - 同步到 Firestore 並安排驗證
+List<Map<String, Object>> records = readRecords(context);
+payload.put("records", records);
+FirebaseFirestore.getInstance()
+        .collection("users").document(uid)
+        .collection("backups").document("latest")
+        .set(payload)
+        .addOnSuccessListener(unused -> scheduleVerify(context.getApplicationContext(), uid, prefs, VERIFY_INTERVAL_MS));
 ```
-```java
-FirebaseFirestore.getInstance().collection("users").document(uid)
-        .collection("backups").document("latest").set(payload);
-```
-- 說明：登入驗證身份後才能同步/還原資料。
+- 說明：Google 登入完成後才會開啟 Firestore 同步；上傳後再排程驗證筆數，確保備份完整，還原流程也會檢查登入狀態並重新排程週期性任務。
 
 ---
 
@@ -632,9 +796,24 @@ FirebaseFirestore.getInstance().collection("users").document(uid)
 - 使用情境：每日檢查到期；每分鐘模式用 Alarm 精準觸發。
 - 程式碼：
 ```java
-WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request);
+// MainActivity.java - 啟動兩種排程
+RecurringPaymentWorker.schedule(getApplicationContext());
+RecurringPaymentAlarmReceiver.scheduleAllMinute(getApplicationContext());
+
+// RecurringPaymentWorker.java - doWork() 中判斷並新增紀錄
+if (shouldInsertToday(recurringPayment)) {
+    dbHelper.insertRecord(...);
+    NotificationHelper.showNotification(...);
+}
+
+// RecurringPaymentAlarmReceiver.java - 每分鐘觸發 minute 頻率
+public void onReceive(Context context, Intent intent) {
+    dbHelper.insertRecordAndReturnId(...);
+    NotificationHelper.showNotification(...);
+    scheduleNextMinute(context, payment);
+}
 ```
-- 說明：WorkManager 穩定排程，AlarmManager 用於高頻需求。
+- 說明：長週期任務交給 WorkManager 確保可靠執行，而每分鐘的高頻需求透過 AlarmManager 精準喚醒並立即寫入紀錄，同時發送通知與雲端同步。
 
 ---
 
@@ -644,10 +823,21 @@ WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK_NAME, ExistingPe
 - 使用情境：類別管理頁拖曳排序後立即寫回資料庫。
 - 程式碼：
 ```java
-Collections.swap(categories, fromPosition, toPosition);
-dbHelper.updateCategoryOrder(categories.get(i).getId(), i);
+// ItemTouchHelper.Callback 內更新列表與排序
+public boolean onMove(...) {
+    Collections.swap(categories, fromPosition, toPosition);
+    adapter.notifyItemMoved(fromPosition, toPosition);
+    return true;
+}
+
+@Override
+public void clearView(...) {
+    for (int i = 0; i < categories.size(); i++) {
+        dbHelper.updateCategoryOrder(categories.get(i).getId(), i);
+    }
+}
 ```
-- 說明：拖曳結束後更新 sort_order。
+- 說明：拖曳時即時更新 RecyclerView 順序，放開後批次寫回 sort_order，讓使用者排序能立即反映到 SQLite 並同步到雲端備份。
 
 ---
 
@@ -657,9 +847,20 @@ dbHelper.updateCategoryOrder(categories.get(i).getId(), i);
 - 使用情境：CSV 匯出分享、CSV 匯入還原資料。
 - 程式碼：
 ```java
+// CsvHelper.java - 匯出後用 FileProvider 分享
 Uri contentUri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".fileprovider", file);
+Intent intent = new Intent(Intent.ACTION_SEND);
+intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+intent.setType("text/csv");
+
+// HistoryActivity.java - 匯入時提供 Append/Overwrite 選項
+String[] options = {"加入現有資料 (Append)", "覆蓋現有資料 (Overwrite)"};
+new MaterialAlertDialogBuilder(this)
+        .setTitle("匯入選項")
+        .setItems(options, (dialog, which) -> { processImport(uri, overwrite); })
+        .show();
 ```
-- 說明：使用 FileProvider 安全分享檔案。
+- 說明：匯出透過 FileProvider 產生安全的 content:// URI 避免檔案權限問題；匯入時提供兩種策略並在背景逐筆寫回資料庫，再觸發雲端同步以保持資料一致。
 
 ---
 
@@ -669,9 +870,18 @@ Uri contentUri = FileProvider.getUriForFile(activity, activity.getPackageName() 
 - 使用情境：對話框、Toolbar、Switch 等一致化 UI。
 - 程式碼：
 ```java
-new MaterialAlertDialogBuilder(this).setTitle("警告").setNegativeButton("取消", null).show();
+// SettingsActivity.java - MaterialSwitch 連動偏好設定
+MaterialSwitch switchCloudBackup = findViewById(R.id.switchCloudBackup);
+switchCloudBackup.setOnCheckedChangeListener((v, isChecked) -> handleCloudBackupToggle(isChecked));
+
+// HistoryActivity.java - MaterialAlertDialogBuilder 匯入選項
+new MaterialAlertDialogBuilder(this)
+        .setTitle("匯入選項")
+        .setItems(options, (dialog, which) -> { ... })
+        .setNegativeButton("取消", null)
+        .show();
 ```
-- 說明：Material 元件提升一致性與可用性。
+- 說明：使用 Material 元件統一外觀與互動行為，Toolbar、Switch 與 Dialog 皆符合設計語彙，提供一致、易讀且符合無障礙規範的 UI 體驗。
 
 ## 八、總結與心得
 
