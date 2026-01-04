@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.view.Menu;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -51,6 +53,10 @@ public class HistoryActivity extends AppCompatActivity {
     private SharedPreferences.OnSharedPreferenceChangeListener backupIndicatorListener;
     private MenuItem cloudStatusItem;
     private boolean recordReceiverRegistered;
+
+    private long lastExitStatusTime = 0L;
+    private boolean isNavigatingWithinApp = false;
+
     private final BroadcastReceiver recordUpdatedReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -104,7 +110,6 @@ public class HistoryActivity extends AppCompatActivity {
                     dbHelper.deleteAllRecords();
                 }
                 for (Record r : imported) {
-                    // 修正：必須帶入匯入紀錄的 timestamp 參數
                     dbHelper.insertRecord(r.getAmount(), r.getCategory(), r.getNote(), r.getLocationName(),
                             r.getTimestamp(), r.getLatitude(), r.getLongitude());
                 }
@@ -144,19 +149,30 @@ public class HistoryActivity extends AppCompatActivity {
         setSupportActionBar(historyToolbar);
 
         // 工具列返回按鈕
-        historyToolbar.setNavigationOnClickListener(v -> finish());
+        historyToolbar.setNavigationOnClickListener(v -> {
+            triggerExitStatusChip();
+            finish();
+        });
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                triggerExitStatusChip();
+                finish();
+            }
+        });
 
         // 點擊卡片跳轉至圖表頁面
         cardTotal.setOnClickListener(v -> {
             Intent intent = new Intent(this, ChartActivity.class);
-            startActivity(intent);
+            startActivityWithExitSkip(intent);
         });
 
         // 點擊 FAB 返回主畫面
         fabAdd.setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(intent);
+            startActivityWithExitSkip(intent);
         });
 
         if (!recordReceiverRegistered) {
@@ -186,7 +202,7 @@ public class HistoryActivity extends AppCompatActivity {
                 intent.putExtra("timestamp", selectedRecord.getTimestamp());
                 intent.putExtra("latitude", selectedRecord.getLatitude());
                 intent.putExtra("longitude", selectedRecord.getLongitude());
-                startActivity(intent);
+                startActivityWithExitSkip(intent);
             }
         });
 
@@ -285,7 +301,6 @@ public class HistoryActivity extends AppCompatActivity {
         CloudBackupIndicator.unregister(this, backupIndicatorListener);
         backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
         
-        // 將「清除所有資料」設為紅色
         MenuItem clearItem = menu.findItem(R.id.action_clear_data);
         if (clearItem != null) {
             SpannableString s = new SpannableString(clearItem.getTitle());
@@ -378,6 +393,31 @@ public class HistoryActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadRecords();
+        lastExitStatusTime = 0L;
+        isNavigatingWithinApp = false;
+    }
+
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (isNavigatingWithinApp) {
+            return;
+        }
+        triggerExitStatusChip();
+    }
+
+    private void startActivityWithExitSkip(Intent intent) {
+        isNavigatingWithinApp = true;
+        startActivity(intent);
+    }
+
+    private void triggerExitStatusChip() {
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastExitStatusTime < 1000L) {
+            return;
+        }
+        lastExitStatusTime = now;
+        StatusChipService.show(this);
     }
 
     @Override
