@@ -242,273 +242,351 @@ flowchart TD
 ```
 
 ### `ChartActivity.java`
-- 功能：依類別彙總金額，顯示總額/筆數/平均與條狀圖。
-- 主要 UI：`totalAmountText`, `totalCountText`, `averageAmountText`, `chartContainer`
+- 功能：依類別彙總金額並輸出總額、筆數、平均與條狀圖，給使用者快速掌握支出結構。
+- 主要 UI：`totalAmountText`、`totalCountText`、`averageAmountText`、`chartContainer`（動態加入 `item_chart_bar.xml`）。
 - 主要流程：
-  1. `loadChart()` 背景讀取 SQLite，分類加總。
-  2. 依金額排序後 `renderChart()` 建立每個類別的進度條與數值。
-- 資料來源：`DatabaseHelper`
-- 版面資源：`activity_chart.xml`, `item_chart_bar.xml`
+  1. `loadChart()` 以背景執行緒呼叫 `DatabaseHelper.readRecordList()`，將 `Record` 依類別聚合並計算總額與平均。
+  2. 聚合結果排序後交給 `renderChart()`，依最大值計算百分比並產生每個條狀項目。
+  3. 點擊 Toolbar 返回或旋轉螢幕時會重新渲染，確保資料與 UI 同步。
+- 資料來源：`DatabaseHelper` 的記帳表查詢。
+- 版面資源：`activity_chart.xml`、`item_chart_bar.xml`
 ```mermaid
 flowchart TD
-    A[讀取 SQLite] --> B[累計類別金額]
-    B --> C[排序/計算統計]
-    C --> D[渲染圖表]
+    A["onCreate() 綁定 Toolbar"] --> B["loadChart() 啟動背景查詢"]
+    B --> C["DatabaseHelper.readRecordList() 取得 Record 清單"]
+    C --> D["依類別聚合金額/計數"]
+    D --> E["計算總額/平均/排序"]
+    E --> F["renderChart() 產生條狀項目"]
+    F --> G["設定 TextView 顯示統計"]
 ```
 
 ### `FullMapActivity.java`
-- 功能：顯示記帳位置的全螢幕地圖，可編輯地點備註。
-- 主要 UI：`SupportMapFragment`, `locationNameView`, `locationCard`
+- 功能：放大顯示單筆紀錄的位置，允許修改「地點備註」並寫回資料庫，補充主畫面地圖卡的詳細資訊。
+- 主要 UI：`SupportMapFragment`、`locationNameView`、`locationCard`、`editLocationName()` 的 Dialog。
 - 主要流程：
-  1. `onMapReady()` 顯示 Marker 與相機縮放。
-  2. 點擊地點文字或卡片開啟 Dialog 修改備註並寫回 SQLite。
-- 資料來源：`DatabaseHelper`
+  1. 從 Intent 讀取經緯度與現有地點名稱，初始化 GoogleMap 並置入 Marker。
+  2. `onMapReady()` 以 `CameraUpdateFactory` 聚焦並更新卡片文字；點擊卡片呼叫 `showEditLocationDialog()`。
+  3. 使用者輸入新的地點備註後呼叫 `DatabaseHelper.updateRecordLocationName()` 寫回並重新顯示。
+- 資料來源：`DatabaseHelper`（更新記錄欄位）。
 - 版面資源：`activity_full_map.xml`
 ```mermaid
 flowchart TD
-    A[接收座標] --> B[GoogleMap 顯示]
-    B --> C[地點備註 Dialog]
-    C --> D[更新 SQLite]
+    A["接收 Intent(recordId, lat, lng, name)"] --> B["onMapReady() 顯示 Marker"]
+    B --> C["相機縮放/顯示名稱"]
+    C --> D{"點擊地點卡片?"}
+    D -->|"是"| E["showEditLocationDialog() 輸入備註"]
+    E --> F["DatabaseHelper.updateRecordLocationName()"]
+    F --> C
+    D -->|"否"| G["維持目前顯示"]
 ```
 
 ### `SettingsActivity.java`
-- 功能：設定定位/主題/自動分類 API、雲端備份、Google 登入、週期性通知。
-- 主要 UI：多個 `MaterialSwitch`、API Key/URL 輸入框、雲端備份與還原按鈕。
+- 功能：集中管理定位、主題、自動分類 API、Google 登入、雲端備份/還原、週期性通知等偏好設定。
+- 主要 UI：多組 `MaterialSwitch`、API Key/URL `TextInputEditText`、雲端備份/還原按鈕、偵錯資料插入按鈕。
 - 主要流程：
-  1. `SharedPreferences` 讀寫使用者設定。
-  2. Google 登入後才可啟用雲端備份與手動同步。
-  3. 設定 API Key/URL 以啟用自動分類。
-- 資料來源：`SharedPreferences`、`FirebaseAuth`、`GoogleSignInClient`
+  1. 啟動時從 `SharedPreferences` 載入各項設定並綁定 UI；切換定位、自動跳歷史、預設類別、自動分類 API 時立即寫回偏好。
+  2. `handleGoogleSignIn()` 透過 `GoogleSignInClient` 取得 IdToken，`FirebaseAuth` 登入成功後啟用 CloudBackup，並可手動 `syncNow()` 或 `restoreFromCloud()`。
+  3. 週期性付款的提醒開關會呼叫 `RecurringPaymentWorker.schedule()` 與 `RecurringPaymentAlarmReceiver.scheduleAllMinute()`，確保排程更新。
+- 資料來源：`SharedPreferences`、`FirebaseAuth`、`GoogleSignInClient`、`CloudBackupManager`。
 - 版面資源：`activity_settings.xml`
 ```mermaid
 flowchart TD
-    A[設定頁] --> B[切換偏好設定]
-    B --> C[Google 登入]
-    C --> D[雲端備份/還原]
+    A["onCreate() 綁定所有 Switch/Input"] --> B["讀取 SharedPreferences" ]
+    B --> C["即時 setOnCheckedChangeListener() 寫回偏好"]
+    C --> D{"需要登入雲端?"}
+    D -->|"是"| E["啟動 Google Sign-In 流程"]
+    E --> F{"FirebaseAuth 登入成功?"}
+    F -->|"是"| G["啟用 CloudBackup 同步/還原按鈕"]
+    F -->|"否"| H["顯示錯誤等待重試"]
+    C --> I["切換通知/週期性付款排程"]
+    I --> J["RecurringPaymentWorker/AlarmReceiver.schedule*"]
 ```
 
 ### `StatusChipService.java`
-- 功能：使用 Overlay View 顯示離開 App 的總額提示。
+- 功能：在使用者離開 App 時，以 Overlay 顯示最近總額 5 秒鐘，提供快速確認。
 - 主要流程：
-  1. 檢查 Overlay 權限。
-  2. 背景讀取 `DatabaseHelper.getTotalAmount()`。
-  3. 用 `WindowManager` 顯示視窗並自動淡出。
-- 資料來源：`DatabaseHelper`
+  1. 由 `MainActivity.onUserLeaveHint()` 或返回鍵觸發，先檢查 `Settings.canDrawOverlays()` 權限。
+  2. 背景執行 `DatabaseHelper.getTotalAmount()` 取得總額，組合顯示文字與關閉計時器。
+  3. `WindowManager.addView()` 顯示 `activity_status_chip.xml`，5 秒後自動 `removeView()`。 
+- 資料來源：`DatabaseHelper`。
 - 版面資源：`activity_status_chip.xml`
 ```mermaid
 flowchart TD
-    A[觸發服務] --> B[查詢總額]
-    B --> C[顯示 Overlay]
-    C --> D[自動移除]
+    A["onStartCommand() 收到觸發"] --> B{"Overlay 權限?"}
+    B -->|"有"| C["背景讀取 getTotalAmount()"]
+    B -->|"無"| D["顯示無法覆蓋訊息"]
+    C --> E["WindowManager 顯示 Chip"]
+    E --> F["Handler 延遲 5 秒移除"]
 ```
 
 ### `AutoCategoryService.java`
-- 功能：背景呼叫 AI 自動分類，更新資料庫後透過廣播通知 UI。
+- 功能：在背景呼叫 AI API 決定自動分類，寫回資料庫、觸發雲端備份並廣播更新，維持前景 UI 即時性。
 - 主要流程：
-  1. 從 `SharedPreferences` 讀取 API Key/URL。
-  2. `AutoCategoryClient.requestAutoCategory()` 取得類別。
-  3. 更新 SQLite、觸發雲端同步並送出廣播。
-- 資料來源：`AutoCategoryClient`、`DatabaseHelper`
+  1. 由 `MainActivity.saveWithPlaceholderThenAutoSelect()` 帶入紀錄 ID、金額、備註與候選類別；服務啟動後讀取 `SharedPreferences` 取 API Key/URL。
+  2. `AutoCategoryClient.requestAutoCategory()` 組合模型、提示詞與候選列表發出 HTTP 請求，若主模型無效自動切換備援模型再試。
+  3. 取得結果後 `DatabaseHelper.updateRecordCategory()` 寫回，`CloudBackupManager.requestSyncIfEnabled()` 同步 Firestore，並 `sendBroadcast(ACTION_RECORD_UPDATED)` 提醒 UI 重載。
+- 資料來源：`AutoCategoryClient`、`DatabaseHelper`、`CloudBackupManager`。
 ```mermaid
 flowchart TD
-    A[Service 啟動] --> B[呼叫 AutoCategoryClient]
-    B --> C[更新 SQLite 類別]
-    C --> D[sendBroadcast 更新]
+    A["Service onStartCommand(recordId, amount, note, options)"] --> B["讀取 API Key/URL"]
+    B --> C["AutoCategoryClient.requestAutoCategory()"]
+    C --> D{"取得類別?"}
+    D -->|"是"| E["updateRecordCategory() 寫回 SQLite"]
+    D -->|"否"| F["回退預設 '其他'"]
+    E --> G["CloudBackupManager.requestSyncIfEnabled()"]
+    F --> G
+    G --> H["sendBroadcast(ACTION_RECORD_UPDATED)"]
 ```
 
 ### `AutoCategoryClient.java`
-- 功能：封裝 OpenAI/GitHub Models API 請求、模型 fallback 與回應解析。
+- 功能：封裝 OpenAI 或 GitHub Models 的 HTTP 呼叫、模型 fallback 與 JSON 解析，確保自動分類穩定取得結果。
 - 主要流程：
-  1. `normalizeApiUrl()` 與 `normalizeToken()` 統一 API 格式。
-  2. `requestOnce()` 送出 HTTP 請求。
-  3. 判斷 invalid model 時切換備援模型重試。
-  4. `parseCategoryFromResponse()` 解析 JSON 取得類別。
+  1. `normalizeApiUrl()`/`normalizeToken()` 將使用者輸入的 URL 與 Token 標準化，避免重複的 slash 或 header 格式錯誤。
+  2. `requestOnce()` 建立 prompt/候選列表後送出 POST，依 HTTP 代碼或 response 內容判斷模型有效性。
+  3. 若模型無效則 `getFallbackModel()` 選擇備援名稱並重試；成功時 `parseCategoryFromResponse()` 解析訊息內容回傳單一分類字串。
+- 資料來源：外部 AI API（OpenAI/GitHub Models）。
 ```mermaid
 flowchart TD
-    A[組 API 請求] --> B[送出 HTTP]
-    B --> C{成功?}
-    C -->|是| D[解析類別]
-    C -->|否| E[切換模型重試]
+    A["normalizeApiUrl()/normalizeToken() 處理輸入"] --> B["requestOnce() 組 JSON 並送出"]
+    B --> C{"回應成功?"}
+    C -->|"是"| D["parseCategoryFromResponse() 解析類別"]
+    C -->|"否"| E{"有備援模型?"}
+    E -->|"是"| F["切換 fallback 後重試"]
+    E -->|"否"| G["回傳 null 表示失敗"]
 ```
 
 ### `ManageCategoriesActivity.java`
-- 功能：新增/刪除/拖曳排序類別。
-- 主要 UI：`RecyclerView` 類別清單、輸入欄位與新增按鈕。
+- 功能：提供類別的新增、刪除與拖曳排序，並即時寫回 SQLite 以便主畫面/自動分類使用一致的類別列表。
+- 主要 UI：`RecyclerView` 類別清單、輸入框、`addCategoryButton`、`ItemTouchHelper` 拖曳手把。
 - 主要流程：
-  1. `loadCategories()` 讀取 SQLite 類別。
-  2. `ItemTouchHelper` 實作拖曳排序。
-  3. 刪除類別時彈窗確認。
-- 資料來源：`DatabaseHelper`
+  1. `loadCategories()` 於背景讀取類別並以 `CategoryAdapter` 套用顏色樣式後顯示。
+  2. `ItemTouchHelper` 的 `onMove()` 交換列表位置並 `clearView()` 內迭代呼叫 `updateCategoryOrder()` 寫回排序欄位。
+  3. 長按刪除圖示時彈出確認 Dialog，確認後 `deleteCategory()` 並重新整理列表。
+- 資料來源：`DatabaseHelper`。
 - 版面資源：`activity_manage_categories.xml`
 ```mermaid
 flowchart TD
-    A[載入類別] --> B[RecyclerView 顯示]
-    B --> C[拖曳排序]
-    C --> D[更新 sort_order]
+    A["onCreate() 綁定 RecyclerView"] --> B["loadCategories() 背景查詢"]
+    B --> C["顯示 CategoryAdapter"]
+    C --> D{"拖曳/刪除動作"}
+    D -->|"拖曳"| E["onMove() 交換順序"]
+    E --> F["clearView() updateCategoryOrder() 寫回"]
+    D -->|"刪除"| G["彈窗確認後 deleteCategory()"]
+    G --> B
 ```
 
-### `Category.java`
-- 功能：類別資料模型，保存 id 與名稱。
+### `Category.java` + `CategoryAdapter.java`
+- 功能：`Category` 為類別模型（id/name），`CategoryAdapter` 將模型資料映射到 Grid 卡片並根據選取狀態套用不同色彩與邊框。
+- 主要流程：
+  1. `Category` 提供 `getId()/getName()` 讓資料庫與 Adapter 操作；建構子在 `seedCategories()` 及 UI 載入時使用。
+  2. `CategoryAdapter.getView()` 綁定文字後依是否選取設定背景色、文字色與邊框，並透過 `setSelectedPosition()` 回應點擊。
+- 版面資源：`item_category.xml`
 ```mermaid
 classDiagram
     class Category {
-        -String id
-        -String name
-        +getId()
-        +getName()
+        -"String id"
+        -"String name"
+        +"getId()"
+        +"getName()"
     }
+    class CategoryAdapter {
+        -"List<Category> categories"
+        -"int selectedPosition"
+        +"getView(position)"
+        +"setSelectedPosition(pos)"
+    }
+    CategoryAdapter --> Category : "顯示/選取"
 ```
 
-### `CategoryAdapter.java`
-- 功能：GridView 類別卡片 Adapter，依選取狀態改變顏色與框線。
-- 主要流程：`getView()` 設定文字與 Material 色彩。
-- 版面資源：`item_category.xml`
-```mermaid
-flowchart TD
-    A[GridView] --> B[CategoryAdapter.getView]
-    B --> C[套用選取樣式]
-```
-
-### `Record.java`
-- 功能：記帳資料模型（金額、類別、備註、時間、座標等）。
+### `Record.java` + `RecordAdapter.java`
+- 功能：`Record` 為記帳資料模型（含金額、類別、備註、時間戳、地址/座標），`RecordAdapter` 將其呈現在歷史清單，並格式化時間、金額與類別名稱。
+- 主要流程：
+  1. `Record` 封裝欄位與 getter，並在 CSV 匯入、AI 自動分類、週期性付款寫入時共用。
+  2. `RecordAdapter.getView()` 先透過 `formatTime()` 將 timestamp 轉為「剛剛/今天/昨天/一週內/日期」；再依類別套色、顯示備註與地址文字。
+  3. `setHighlightRecord(recordId)` 讓歷史頁在廣播刷新時能對應單筆紀錄進行動畫提示。
+- 資料來源：`DatabaseHelper` 提供的 `Record` 清單。
+- 版面資源：`item_record.xml`
 ```mermaid
 classDiagram
     class Record {
-        -String id
-        -int amount
-        -String category
-        -String note
-        -long timestamp
-        -double latitude
-        -double longitude
-        +getAmount()
+        -"String id"
+        -"int amount"
+        -"String category"
+        -"String note"
+        -"long timestamp"
+        -"double latitude"
+        -"double longitude"
+        -"String locationName"
+        +"getter/setter"
     }
-```
-
-### `RecordAdapter.java`
-- 功能：ListView Adapter，格式化時間顯示（剛剛/今天/昨天/一週內）。
-- 主要流程：`formatTime()` 依時間差輸出相對時間字串。
-- 版面資源：`item_record.xml`
-```mermaid
-flowchart TD
-    A[Record] --> B["formatTime()"]
-    B --> C[填入 ListView]
+    class RecordAdapter {
+        -"List<Record> records"
+        +"formatTime(timestamp)"
+        +"setHighlightRecord(id)"
+        +"getView(position)"
+    }
+    RecordAdapter --> Record : "綁定/顯示"
 ```
 
 ### `DatabaseHelper.java`
-- 功能：SQLiteOpenHelper，建立三張表與 CRUD（records/categories/recurring）。
+- 功能：集中管理 SQLite（records、categories、recurring_payments）建表與 CRUD；供主畫面、歷史、圖表、週期性付款與雲端備份共用。
 - 主要流程：
-  1. `onCreate()` 建表並 `seedCategories()`。
-  2. 提供 insert/update/delete/query 方法。
-  3. `getTotalAmount()` 用於退出時總額提示。
-- 資料來源：SQLite
+  1. `onCreate()` 建立三張表並呼叫 `seedCategories()` 插入預設類別；`onUpgrade()` 覆蓋重建處理版本升級。
+  2. 提供 `insertRecordAndReturnId()`、`updateRecord()`、`deleteRecord()` 等方法，並支援批次匯入與排序更新。
+  3. `getTotalAmount()` 為離開提示、`readRecordList()` 為圖表與歷史頁提供資料，`readRecurringPayments()`/`updateRecurringPayment()` 支援排程。
+- 資料來源：內建 SQLite。
 ```mermaid
 flowchart TD
-    A[SQLiteOpenHelper] --> B[onCreate 建表]
-    B --> C[CRUD API]
+    A["SQLiteOpenHelper.onCreate() 建表"] --> B["seedCategories() 預設類別"]
+    B --> C["CRUD: insert/update/delete/query"]
+    C --> D["getTotalAmount()/readRecordList() 提供前景"]
+    C --> E["readRecurringPayments()/updateCategoryOrder() 等輔助"]
 ```
 
 ### `CsvHelper.java`
-- 功能：CSV 匯出/匯入與分享，支援地址文字與地理座標互轉。
+- 功能：處理 CSV 匯出/匯入、分享與座標轉換，確保跨裝置資料可攜。
 - 主要流程：
-  1. `generateCsvContent()` 產出 CSV。
-  2. `importCsv()` 解析 CSV 並補上經緯度。
-  3. `shareCsv()`/`writeCsvToUri()` 進行分享或儲存。
-- 資料來源：`Geocoder`、`FileProvider`
+  1. `generateCsvContent(records)` 把 `Record` 清單轉成含地點文字與經緯度的 CSV 字串。
+  2. `writeCsvToUri()`/`shareCsv()` 透過 `FileProvider` 暴露 content URI 供分享或儲存。
+  3. `importCsv()` 逐列解析，先用 `Geocoder` 反查座標，再回傳 `Record` 清單給呼叫端寫入 SQLite。
+- 資料來源：`Geocoder`、`FileProvider`、`DatabaseHelper`（寫入端）。
 ```mermaid
 flowchart TD
-    A[Record 清單] --> B[產生 CSV]
-    B --> C[分享或存檔]
-    D[讀取 CSV] --> E[轉回 Record]
+    A["Record 清單"] --> B["generateCsvContent() 輸出 CSV 字串"]
+    B --> C{"動作"}
+    C -->|"分享"| D["shareCsv() 用 FileProvider"]
+    C -->|"存檔"| E["writeCsvToUri() 寫入 URI"]
+    F["importCsv() 讀檔"] --> G["逐列解析 + Geocoder 座標"]
+    G --> H["回傳 Record 清單供寫入"]
 ```
 
 ### `CloudBackupIndicator.java`
-- 功能：監聽雲端備份狀態，更新 Toolbar icon 與 Snackbar。
-- 主要流程：`register()` 監聽偏好變化、`showStatusSnackbar()` 顯示狀態訊息。
+- 功能：監聽雲端備份狀態與偏好變化，更新 Toolbar 雲朵圖示並在頁面上顯示 Snackbar 提示同步結果。
+- 主要流程：
+  1. `register()` 註冊 `SharedPreferences.OnSharedPreferenceChangeListener`，追蹤備份啟用、登入狀態與同步狀態。
+  2. 偵測到狀態改變時呼叫 `updateIcon()` 切換 icon/顏色，並以 `showStatusSnackbar()` 呈現最新狀態訊息。
+- 資料來源：`SharedPreferences`、`CloudBackupManager.Status`。
 ```mermaid
 flowchart TD
-    A[偏好變更] --> B[更新圖示]
-    B --> C[顯示狀態訊息]
+    A["register() 監聽偏好"] --> B["狀態變更 callback"]
+    B --> C["updateIcon() 更新圖示"]
+    B --> D["showStatusSnackbar() 顯示訊息"]
 ```
 
 ### `CloudBackupManager.java`
-- 功能：Firestore 同步/還原與狀態驗證。
+- 功能：負責 Firestore 同步、還原與驗證，並與排程器整合確保備份一致性。
 - 主要流程：
-  1. `syncNow()` 讀 SQLite 並上傳 Firestore。
-  2. `restoreFromCloud()` 下載並回寫本地資料。
-  3. `verifyPendingSync()` 驗證筆數確保同步成功。
-- 資料來源：`FirebaseAuth`、`FirebaseFirestore`、`DatabaseHelper`
+  1. `syncNow()` 讀取 SQLite（records/categories/recurring_payments）組成 payload 上傳到 `users/{uid}/backups/latest`，上傳成功後排程 `scheduleVerify()` 驗證筆數。
+  2. `restoreFromCloud()` 下載最新備份，於背景逐表寫回 SQLite，再重新排程週期性付款工作。
+  3. `verifyPendingSync()` 重新讀取雲端筆數與本地筆數比對，若不一致更新狀態為 ERROR 讓 UI 提示使用者。
+- 資料來源：`FirebaseAuth`、`FirebaseFirestore`、`DatabaseHelper`。
 ```mermaid
 flowchart TD
-    A[讀取 SQLite] --> B[寫入 Firestore]
-    C[讀取 Firestore] --> D[還原 SQLite]
+    A["syncNow() 讀取 SQLite"] --> B["寫入 Firestore backups/latest"]
+    B --> C["scheduleVerify()" ]
+    C --> D{"筆數一致?"}
+    D -->|"是"| E["updateStatus(SUCCESS)"]
+    D -->|"否"| F["updateStatus(ERROR) 並等待重試"]
+    G["restoreFromCloud() 下載備份"] --> H["寫回 SQLite"]
+    H --> I["重新排程 Work/Alarm"]
 ```
 
 ### `RecurringPayment.java`
-- 功能：週期性付款資料模型與頻率常數。
+- 功能：週期性付款模型，包含金額、類別、頻率型別（daily/weekly/monthly/minute）、頻率參數（weekday/day/hour/minute）與最後執行時間。
+- 主要用途：提供 `RecurringPaymentWorker` 與 `RecurringPaymentAlarmReceiver` 判斷是否到期並插入紀錄。
 ```mermaid
 classDiagram
     class RecurringPayment {
-        -String id
-        -int amount
-        -String frequency
-        +getFrequency()
+        -"String id"
+        -"int amount"
+        -"String category"
+        -"String frequency"
+        -"int weekday"
+        -"int dayOfMonth"
+        -"int hour"
+        -"int minute"
+        -"long lastRunAt"
+        +"getter/setter"
     }
 ```
 
 ### `RecurringPaymentActivity.java`
-- 功能：週期性付款清單頁，新增/編輯/刪除所有。
-- 主要流程：`loadRecurringList()` 讀取 SQLite 並更新 ListView。
+- 功能：列出所有週期性付款，支援新增、編輯與批次刪除，並在返回時刷新主排程。
+- 主要 UI：`ListView`、新增 FAB、`deleteAll` 菜單項。
+- 主要流程：
+  1. `loadRecurringList()` 於背景讀取 SQLite，將 `RecurringPaymentAdapter` 套入 ListView。
+  2. 點擊項目開啟 `RecurringPaymentEditActivity`；長按或點擊刪除全部時彈出確認後呼叫 `deleteAllRecurringPayments()`。
+  3. `onPause()` 時重新排程 Worker/Alarm 確保最新設定生效。
+- 資料來源：`DatabaseHelper`。
 - 版面資源：`activity_recurring_payment.xml`
 ```mermaid
 flowchart TD
-    A[讀取 recurring] --> B[ListView 顯示]
-    B --> C[點擊進編輯]
+    A["onCreate() 綁定 ListView/FAB"] --> B["loadRecurringList() 背景查詢"]
+    B --> C["顯示 RecurringPaymentAdapter"]
+    C --> D{"點擊項目?"}
+    D -->|"是"| E["開啟 RecurringPaymentEditActivity"]
+    C --> F{"刪除全部?"}
+    F -->|"確認"| G["deleteAllRecurringPayments()"]
+    G --> B
 ```
 
 ### `RecurringPaymentAdapter.java`
-- 功能：週期性付款清單 Adapter，組合標題與頻率顯示文字。
-- 主要流程：`formatSchedule()` 依頻率組字。
+- 功能：將 `RecurringPayment` 資料轉成可讀的標題與頻率說明文字，呈現在 `RecurringPaymentActivity` 的 ListView。
+- 主要流程：`getView()` 依頻率型別組合文案（如「每週三 12:00」「每分鐘」），並套用 Material 主題色，點擊後透過回呼觸發編輯。
 ```mermaid
 flowchart TD
-    A[RecurringPayment] --> B[formatSchedule]
-    B --> C[顯示於 ListView]
+    A["RecurringPayment 清單"] --> B["getView() 組合標題/說明"]
+    B --> C["設定 onClick 觸發編輯"]
 ```
 
 ### `RecurringPaymentEditActivity.java`
-- 功能：新增/編輯週期性付款，依頻率顯示不同輸入元件。
+- 功能：新增或編輯週期性付款，依不同頻率顯示對應的輸入欄位，並在儲存後自動排程背景任務。
 - 主要流程：
-  1. `setupFrequencyGroup()` 切換週期輸入區。
-  2. `save()` 寫入 SQLite，排程 Work/Alarm。
-  3. `handlePrimaryAction()` 依是否編輯決定更新或刪除。
+  1. `setupFrequencyGroup()` 切換 `minute/week/day` 等輸入元件的可見度，確保表單正確。
+  2. `save()` 驗證金額與頻率後呼叫 `DatabaseHelper.insertOrUpdateRecurringPayment()` 寫入，接著 `RecurringPaymentWorker.schedule()` 與 `RecurringPaymentAlarmReceiver.scheduleAllMinute()` 重新排程。
+  3. `handlePrimaryAction()` 判斷是否為編輯模式，決定更新/刪除並回傳結果給列表頁。
+- 資料來源：`DatabaseHelper`。
 - 版面資源：`activity_recurring_payment_edit.xml`
 ```mermaid
 flowchart TD
-    A[輸入金額/類別] --> B[選擇頻率]
-    B --> C[寫入 SQLite]
-    C --> D[排程 Work/Alarm]
+    A["onCreate() 載入表單"] --> B["setupFrequencyGroup() 切換輸入"]
+    B --> C{"點擊儲存?"}
+    C -->|"是"| D["save() 寫入 SQLite"]
+    D --> E["排程 Worker/Alarm"]
+    C -->|"刪除"| F["deleteRecurringPayment()"]
 ```
 
 ### `RecurringPaymentWorker.java`
-- 功能：WorkManager 每日檢查是否到期，自動新增記帳並通知。
-- 主要流程：讀取 recurring -> 判斷是否到期 -> 新增記帳 -> 發通知。
+- 功能：每日由 WorkManager 觸發，檢查非 minute 類型的週期性付款是否到期，並自動插入紀錄、發通知與雲端同步。
+- 主要流程：
+  1. `doWork()` 讀取所有 recurring 資料，對 daily/weekly/monthly 逐筆判斷 `shouldInsertToday()`。
+  2. 若到期則 `insertRecordAndReturnId()` 寫入記帳、更新 `lastRunAt`，並透過 `NotificationHelper` 通知使用者。
+  3. 最後呼叫 `CloudBackupManager.requestSyncIfEnabled()` 同步備份。
 ```mermaid
 flowchart TD
-    A[每日觸發] --> B[檢查到期]
-    B --> C[新增紀錄]
-    C --> D[通知]
+    A["WorkManager 觸發 doWork()"] --> B["讀取 recurring_payments"]
+    B --> C{"shouldInsertToday()?"}
+    C -->|"是"| D["insertRecordAndReturnId()"]
+    D --> E["更新 lastRunAt"]
+    D --> F["NotificationHelper.showNotification()"]
+    F --> G["CloudBackupManager.requestSyncIfEnabled()"]; 
+    C -->|"否"| H["下一筆"]
 ```
 
 ### `RecurringPaymentAlarmReceiver.java`
-- 功能：AlarmManager 每分鐘觸發（Minute 模式），新增紀錄並排程下一次。
+- 功能：負責 minute 頻率的 AlarmManager 觸發，精準到每分鐘寫入記帳並重新排程下一次。
 - 主要流程：
-  1. `scheduleAllMinute()` 找出 minute 項目並排程。
-  2. `onReceive()` 寫入紀錄、通知、再排程。
+  1. `scheduleAllMinute()` 於設定頁或開機時取得 minute 項目並為每筆排程 Alarm。
+  2. `onReceive()` 取得對應 recurring，呼叫 `insertRecordAndReturnId()` 插入紀錄、`NotificationHelper` 通知，最後以 `scheduleNextMinute()` 為該筆排下一次。
+  3. 執行後同樣會呼叫 `CloudBackupManager.requestSyncIfEnabled()`，維持雲端一致。
 ```mermaid
 flowchart TD
-    A[Alarm 觸發] --> B[新增紀錄]
-    B --> C[通知]
-    C --> D[排程下一次]
+    A["scheduleAllMinute() 排程所有 minute 項目"] --> B["AlarmManager at exact minute"]
+    B --> C["onReceive() 讀 recurring 資料"]
+    C --> D["insertRecordAndReturnId() 寫入"]
+    D --> E["NotificationHelper.showNotification()"]
+    E --> F["CloudBackupManager.requestSyncIfEnabled()"]
+    D --> G["scheduleNextMinute() 重新排程"]
 ```
 
 ---
