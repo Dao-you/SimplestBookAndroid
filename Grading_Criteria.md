@@ -530,6 +530,8 @@ flowchart TD
 
 - 歷史清單：總額卡片、ListView 列表、CSV 匯出/匯入入口。
   ![](./screenshots/history.jpg)
+  ![](./screenshots/csv.jpg)
+  ![](./screenshots/csv1.jpg)
 
 - 編輯紀錄：時間修改、類別切換、地圖預覽。
   ![](./screenshots/edit_record.jpg)
@@ -541,6 +543,7 @@ flowchart TD
 - 週期性付款：清單與編輯頁。
   ![](./screenshots/monthly_pay.jpg)
   ![](./screenshots/monthly_pay1.jpg)
+  ![](./screenshots/monthly_pay2.jpg)
 
 - 設定頁：雲端備份、Google 登入、API 設定。
   ![](./screenshots/backup.jpg)
