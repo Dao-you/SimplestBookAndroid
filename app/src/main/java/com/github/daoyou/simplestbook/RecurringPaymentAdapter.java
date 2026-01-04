@@ -26,8 +26,8 @@ public class RecurringPaymentAdapter extends ArrayAdapter<RecurringPayment> {
         TextView detail = convertView.findViewById(R.id.recurringDetail);
 
         if (item != null) {
-            title.setText("$ " + item.getAmount() + " - " + item.getCategory());
-            detail.setText(formatSchedule(item) + " · " + item.getNote());
+            title.setText("$ " + item.getAmount() + " - " + item.getNote());
+            detail.setText(item.getCategory() + " · " + formatSchedule(item));
         }
 
         return convertView;
