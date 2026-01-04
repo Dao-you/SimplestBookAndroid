@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private double preFetchedLat = 0.0;
     private double preFetchedLon = 0.0;
     private long lastExitStatusTime = 0L;
+    private boolean isNavigatingWithinApp = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,17 +97,17 @@ public class MainActivity extends AppCompatActivity {
         saveButton.setOnClickListener(v -> handlePrimaryAction());
         recurringFab.setOnClickListener(v -> {
             Intent intent = new Intent(this, RecurringPaymentActivity.class);
-            startActivity(intent);
+            startActivityWithExitSkip(intent);
         });
 
         topAppBar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_manage_categories) {
                 Intent intent = new Intent(this, ManageCategoriesActivity.class);
-                startActivity(intent);
+                startActivityWithExitSkip(intent);
                 return true;
             } else if (item.getItemId() == R.id.action_settings) {
                 Intent intent = new Intent(this, SettingsActivity.class);
-                startActivity(intent);
+                startActivityWithExitSkip(intent);
                 return true;
             } else if (item.getItemId() == R.id.action_cloud_status) {
                 CloudBackupIndicator.showStatusSnackbar(this);
@@ -249,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (prefs.getBoolean(SettingsActivity.KEY_AUTO_HISTORY, true)) {
             Intent intent = new Intent(this, HistoryActivity.class);
-            startActivity(intent);
+            startActivityWithExitSkip(intent);
         } else {
             prefetchLocation(); // 留在本頁則重新預抽樣下一筆
         }
@@ -265,6 +266,7 @@ public class MainActivity extends AppCompatActivity {
         CloudBackupManager.verifyPendingSync(getApplicationContext());
         updatePrimaryActionLabel();
         lastExitStatusTime = 0L;
+        isNavigatingWithinApp = false;
     }
 
     private void checkRecurringNotificationPermission() {
@@ -286,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
             saveRecord();
         } else {
             Intent intent = new Intent(this, HistoryActivity.class);
-            startActivity(intent);
+            startActivityWithExitSkip(intent);
         }
     }
 
@@ -332,7 +334,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
+        if (isNavigatingWithinApp) {
+            return;
+        }
         triggerExitStatusChip();
+    }
+
+    private void startActivityWithExitSkip(Intent intent) {
+        isNavigatingWithinApp = true;
+        startActivity(intent);
     }
 
     private void triggerExitStatusChip() {
