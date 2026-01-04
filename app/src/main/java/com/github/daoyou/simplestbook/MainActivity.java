@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.MenuItem;
 import android.view.inputmethod.EditorInfo;
 import android.widget.GridView;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     private double preFetchedLat = 0.0;
     private double preFetchedLon = 0.0;
+    private long lastExitStatusTime = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -254,6 +256,7 @@ public class MainActivity extends AppCompatActivity {
         prefetchLocation();
         CloudBackupManager.verifyPendingSync(getApplicationContext());
         updatePrimaryActionLabel();
+        lastExitStatusTime = 0L;
     }
 
     private void checkRecurringNotificationPermission() {
@@ -316,5 +319,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         CloudBackupIndicator.unregister(this, backupIndicatorListener);
         super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        triggerExitStatusChip();
+        finish();
+    }
+
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        triggerExitStatusChip();
+    }
+
+    private void triggerExitStatusChip() {
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastExitStatusTime < 1000L) {
+            return;
+        }
+        lastExitStatusTime = now;
+        StatusChipService.show(this);
     }
 }

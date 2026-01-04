@@ -51,6 +51,7 @@ Use the Gradle wrapper from the repo root.
 - `app/src/main/java/com/github/daoyou/simplestbook/ChartActivity.java`: aggregates records by category on background thread, then renders bar items with totals, counts, and averages.
 - `app/src/main/java/com/github/daoyou/simplestbook/FullMapActivity.java`: full map view for a record. Shows marker and allows editing “location note” via dialog; saves it back to DB and syncs.
 - `app/src/main/java/com/github/daoyou/simplestbook/SettingsActivity.java`: settings and cloud sign-in. Toggles preferences (location, theme, auto history, recurring notifications). Handles Google sign-in, enables cloud backup, runs manual backup/restore, and inserts debug data.
+- `app/src/main/java/com/github/daoyou/simplestbook/StatusChipService.java`: overlay service that shows a non-interactive status chip with total amount for ~5 seconds when exiting the app.
 
 ### Category Management
 - `app/src/main/java/com/github/daoyou/simplestbook/ManageCategoriesActivity.java`: add/reorder/delete categories. Loads from DB, uses RecyclerView with drag-and-drop; on drag end updates sort order in DB.
@@ -77,6 +78,7 @@ Use the Gradle wrapper from the repo root.
 
 ### Database Layer
 - `app/src/main/java/com/github/daoyou/simplestbook/DatabaseHelper.java`: SQLite schema and CRUD for records, categories, recurring payments; seeds default categories on first run.
+- `DatabaseHelper.getTotalAmount()`: computes the total sum of recorded amounts for exit status display.
 
 ### Test Templates
 - `app/src/test/java/com/example/simplestbook/ExampleUnitTest.java`: sample local JUnit test.

@@ -160,6 +160,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.query(TABLE_RECORDS, null, null, null, null, null, COLUMN_TIMESTAMP + " DESC");
     }
 
+    public int getTotalAmount() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int total = 0;
+        Cursor cursor = db.rawQuery("SELECT SUM(" + COLUMN_AMOUNT + ") FROM " + TABLE_RECORDS, null);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                total = cursor.isNull(0) ? 0 : cursor.getInt(0);
+            }
+            cursor.close();
+        }
+        db.close();
+        return total;
+    }
+
     public String getLocationNameById(String id) {
         SQLiteDatabase db = this.getReadableDatabase();
         String locationName = null;
