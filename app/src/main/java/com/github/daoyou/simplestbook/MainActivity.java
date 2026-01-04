@@ -13,6 +13,7 @@ import android.widget.GridView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
@@ -77,6 +78,13 @@ public class MainActivity extends AppCompatActivity {
         recurringFab = findViewById(R.id.recurringFab);
         cloudStatusItem = topAppBar.getMenu().findItem(R.id.action_cloud_status);
         backupIndicatorListener = CloudBackupIndicator.register(this, cloudStatusItem);
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                triggerExitStatusChip();
+                finish();
+            }
+        });
 
         loadCategories();
 
@@ -319,12 +327,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         CloudBackupIndicator.unregister(this, backupIndicatorListener);
         super.onDestroy();
-    }
-
-    @Override
-    public void onBackPressed() {
-        triggerExitStatusChip();
-        finish();
     }
 
     @Override
