@@ -54,6 +54,9 @@
         <service
             android:name=".StatusChipService"
             android:exported="false" />
+        <service
+            android:name=".AutoCategoryService"
+            android:exported="false" />
         <receiver
             android:name=".RecurringPaymentAlarmReceiver"
             android:exported="false" />
