@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Grading_Criteria.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="114-%E6%87%89%E7%94%A8%E8%BB%9F%E9%AB%94%E5%AF%A6%E7%BF%92%EF%BC%8D%E6%9C%9F%E6%9C%AB%E5%B0%88%E9%A1%8C%E5%A0%B1%E5%91%8A">114 應用軟體實習－期末專題報告</h1>
+<h2 id="%E5%9F%BA%E6%9C%AC%E8%B3%87%E6%96%99">基本資料</h2>
+<p>專題名稱：Simplest Book Android 極簡記帳</p>
+<p>組長：孫培鈞 電子三甲 112360104</p>
+<p>組員：方宇澤 光電四 111650037</p>
+<hr>
+<h2 id="%E4%B8%80%E5%B0%88%E9%A1%8C%E5%8B%95%E6%A9%9F5-%E5%88%86">一、專題動機（5 分）</h2>
+<p>因記帳為日常中需要一直執行的內容，就像是過捷運閘門一樣，大家永遠都在思考要如何越簡單、越快速最好。市面上的記帳軟體卻常常有很多複雜的附加功能，造成這個小動作變得很麻煩，因此有了此專案的前身 - <a href="https://github.com/Dao-you/SimplestBookkeepingPWA"><code>SimeplestBookkeepingPWA</code></a>，它是使用 Python flask 撰寫的 PWA App，以伺服器端儲存為核心運作。</p>
+<p>但是網頁應用程式仍然有不少缺點，首先是雖然已經做了本地介面快取，也做了可以安裝在桌面的措施，但在手機上受限於瀏覽器沒辦法常駐在背景運作，所以開啟的速度還是很慢，並且資料寫入基於網路請求，常常也需要等一段時間，在網路不穩定的地方例如電梯進出，還常常會失敗。</p>
+<p>因此我們希望基於同樣的設計理念，設計一個 Android 原生應用程式的版本，用同樣最簡化流程的方法，改善以上缺點。並且增加背景雲端備份，承襲伺服器端儲存的優點，也更可以推廣給所有人使用，不須要自己先架設一台網頁伺服器。</p>
+<hr>
+<h2 id="%E4%BA%8C%E5%B0%8F%E7%B5%84%E5%88%86%E5%B7%A55-%E5%88%86">二、小組分工（5 分）</h2>
+<p>請說明小組成員的分工內容，可使用條列方式說明每位成員負責的項目。</p>
+<ul>
+<li>
+<p>成員一：Dao-you 孫培鈞 電子三甲 112360104</p>
+<ol>
+<li>資料處理程式設計</li>
+</ol>
+</li>
+<li>
+<p>成員二：terry 方宇澤 光電四 111650037</p>
+<ol>
+<li>介面 Layout 設計</li>
+</ol>
+</li>
+</ul>
+<p>Branch Neteork 圖</p>
+<p><img src="./images/branch1.png" alt=""></p>
+<p><img src="./images/branch2.png" alt=""></p>
+<p><img src="./images/branchlist.png" alt=""></p>
+<hr>
+<h2 id="%E4%B8%89%E7%B3%BB%E7%B5%B1%E6%B5%81%E7%A8%8B%E5%9C%9610-%E5%88%86">三、系統流程圖（10 分）</h2>
+<ol>
+<li>
+<p>整體運作流程</p>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    subgraph U["使用者前景流程"]
+        UA["啟動 App (SimplestBookApplication)"] --> UB["MainActivity.onCreate() 綁定 UI/偏好"]
+        UB --> UC["loadCategories() 從 SQLite 載入類別"]
+        UB --> UD["checkPermission() 申請定位權限"]
+        UB --> UE["checkRecurringNotificationPermission() 申請通知權限"]
+        UB --> UF["onResume()"]
+        UF --> UG["loadCategories() 重新整理"]
+        UF --> UH["prefetchLocation() 預抓座標"]
+        UF --> UI["CloudBackupManager.verifyPendingSync()"]
+
+        UJ["輸入金額/備註後送出"] --> UK["saveRecord() 驗證金額/備註"]
+        UK --> UL{"類別已選?"}
+        UL -->|"否且預設=自動"| UM["saveWithPlaceholderThenAutoSelect()"]
+        UL -->|"否"| UN["提示請選擇類別"]
+        UL -->|"是"| UO["saveRecordWithCategory()"]
+        UM --> UO
+        UO --> UP{"定位開啟?"}
+        UP -->|"否"| UQ["以 0,0 儲存"]
+        UP -->|"是"| UR{"已預抓座標?"}
+        UR -->|"是"| US["使用預抓座標寫入"]
+        UR -->|"否"| UT["getLastLocation() 取得/失敗 -> 0,0"]
+        US --> UV["performDatabaseSave() 寫入 SQLite"]
+        UT --> UV
+        UQ --> UV
+        UV --> UW["completeSave() 清空欄位"]
+        UW --> UX{"自動跳歷史頁?"}
+        UX -->|"是"| UY["開啟 HistoryActivity"]
+        UX -->|"否"| UZ["留在主畫面並再預抓定位"]
+        UAA["使用者離開 App/按返回"] --> UAB["StatusChipService.show()"]
+    end
+
+    subgraph B["背景/輔助服務"]
+        UV --> BA["CloudBackupManager.requestSyncIfEnabled()"]
+        BA --> BB["FirebaseAuth 取使用者"]
+        BB --> BC{"已登入?"}
+        BC -->|"是"| BD["讀取 records/categories/recurring 並上傳 Firestore"]
+        BC -->|"否"| BE["更新狀態為 ERROR"]
+        BD --> BF["scheduleVerify() 驗證筆數"]
+
+        UV --> BG["(自動類別) AutoCategoryService.start()"]
+        BG --> BH["AutoCategoryClient 呼叫 API"]
+        BH --> BI{"回傳類別"}
+        BI -->|"成功"| BJ["更新 SQLite 類別"]
+        BI -->|"失敗"| BK["回退 '其他'"]
+        BJ --> BL["CloudBackupManager.requestSyncIfEnabled()"]
+        BK --> BL
+        BL --> BM["Broadcast ACTION_RECORD_UPDATED"]
+        BM --> BN["HistoryActivity 收到後重載"]
+
+        UAB --> BO["查詢 getTotalAmount() 並顯示 Overlay"]
+        UB --> BP["RecurringPaymentWorker.schedule()/AlarmReceiver.scheduleAllMinute()"]
+        BP --> BQ["每日 WorkManager + 每分鐘 Alarm 插入到期紀錄"]
+    end
+
+    subgraph S["設定/權限入口"]
+        SA["SettingsActivity 切換定位/預設類別/自動歷史"] --> UB
+        SA --> SB["設定 Google 登入與雲端備份開關"] --> BA
+        SA --> SC["填入自動分類 API Key/URL"] --> BG
+    end
+</div></code></pre>
+</li>
+<li>
+<p>週期性付款功能運作流程</p>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["RecurringPaymentActivity 開啟"] --> B["新增/編輯項目 (RecurringPaymentEditActivity)"]
+    B --> C["save() 寫入 SQLite recurring_payments"]
+    C --> D{"頻率類型"}
+    D -->|"daily/weekly/monthly"| E["RecurringPaymentWorker.schedule() 排 WorkManager"]
+    D -->|"minute"| F["RecurringPaymentAlarmReceiver.scheduleAllMinute() 排 Alarm"]
+    E --> G["每日觸發 doWork() 檢查 lastRunAt"]
+    F --> H["每分鐘 onReceive() 判斷 minute 項目"]
+    G --> I{"到期?"}
+    H --> I
+    I -->|"是"| J["insertRecordAndReturnId() 寫入紀錄"]
+    J --> K["Notification 發送已新增紀錄" ]
+    K --> L["CloudBackupManager.requestSyncIfEnabled() 同步"]
+    I -->|"否"| M["重新排程等待下一次"]
+</div></code></pre>
+</li>
+<li>
+<p>雲端備份功能運作流程</p>
+<pre><code class="language-mermaid"><div class="mermaid">graph LR
+    subgraph Cloud["啟用與同步"]
+        A["SettingsActivity 切換雲端備份 ON"] --> B["Google 登入 FirebaseAuth"]
+        B --> C{"登入成功?"}
+        C -->|"是"| D["CloudBackupManager.syncNow()" ]
+        C -->|"否"| E["updateStatus(ERROR) 等待使用者重試"]
+        D --> F["readRecords()/readCategories()/readRecurring()" ]
+        F --> G["Firestore backups/latest set(payload)"]
+        G --> H["scheduleVerify() 依筆數驗證" ]
+        H --> I{"筆數符合?"}
+        I -->|"是"| J["updateStatus(SUCCESS)" ]
+        I -->|"否"| K["重試驗證或標記 ERROR"]
+    end
+    subgraph Restore["還原流程"]
+        L["使用者點擊手動還原"] --> M["restoreFromCloud() 下載最新備份"]
+        M --> N{"資料存在?"}
+        N -->|"有"| O["背景執行 restoreRecords()/restoreCategories()/restoreRecurring()" ]
+        O --> P["updateStatus(SUCCESS) 並回呼 UI" ]
+        P --> Q["重新排程 WorkManager/Alarm"]
+        N -->|"無"| R["updateStatus(ERROR: empty backup)"]
+    end
+</div></code></pre>
+</li>
+</ol>
+<hr>
+<h2 id="%E5%9B%9B%E7%A8%8B%E5%BC%8F%E4%BB%8B%E7%B4%B95-%E5%88%86">四、程式介紹（5 分）</h2>
+<p>用到的函式庫：</p>
+<ol>
+<li>AndroidX WorkManager：週期性付款背景排程。</li>
+<li>Google Play Services Maps：地圖顯示與 Marker。</li>
+<li>Google Play Services Location：定位與預抓座標。</li>
+<li>Google Play Services Auth（Google Sign-In）：取得使用者 IdToken。</li>
+<li>Firebase Authentication：Google 登入與帳號狀態。</li>
+<li>Firebase Cloud Firestore：雲端備份同步與還原。</li>
+<li>Gson：解析 JSON（偵錯資料與 API 回應）。</li>
+<li>Guava：集合/工具類輔助（依賴庫）。</li>
+</ol>
+<p>以下依 <code>.java</code> 檔案說明其功能、主要方法/流程、資料來源與對應 UI，並附上 Mermaid 圖表：</p>
+<h3 id="simplestbookapplicationjava"><code>SimplestBookApplication.java</code></h3>
+<ul>
+<li>功能：App 入口點，啟動時套用動態 Material 色彩到所有 Activity。</li>
+<li>主要方法：<code>onCreate()</code></li>
+<li>資料/資源：無直接資料存取，僅進行 UI 主題初始化。</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["App 啟動"] --> B["onCreate() 呼叫 Application"]
+    B --> C["DynamicColors.applyToActivitiesIfAvailable() 套用色彩"]
+    C --> D["所有 Activity 綁定動態主題"]
+</div></code></pre>
+<h3 id="mainactivityjava"><code>MainActivity.java</code></h3>
+<ul>
+<li>功能：主畫面輸入金額與備註、選擇類別、儲存記帳，並可進入歷史、設定與週期性付款。</li>
+<li>主要 UI：<code>amountInput</code>, <code>noteInput</code>, <code>categoryGrid</code>, <code>saveButton</code>, <code>topAppBar</code>, <code>recurringFab</code></li>
+<li>主要流程：
+<ol>
+<li><code>loadCategories()</code> 從 SQLite 載入類別並補入「其他」。</li>
+<li><code>saveRecord()</code> 驗證輸入，取得類別後進入定位流程。</li>
+<li><code>performDatabaseSave()</code> 背景寫入 SQLite，呼叫雲端同步。</li>
+<li>若預設類別為自動，<code>saveWithPlaceholderThenAutoSelect()</code> 先存「其他」再啟動 <code>AutoCategoryService</code>。</li>
+<li><code>checkPermission()</code> 申請定位權限；<code>prefetchLocation()</code> 預先抓取座標。</li>
+<li><code>onUserLeaveHint()</code>/返回鍵觸發 <code>StatusChipService</code> 顯示離開時總額。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>、<code>SharedPreferences</code>、<code>FusedLocationProviderClient</code></li>
+<li>版面資源：<code>activity_main.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["onCreate() 綁定 UI+Toolbar + 檢查定位權限"] --> B["loadCategories() 載入/預設類別"]
+    B --> C["prefetchLocation() 預抓座標"]
+    C --> D["使用者輸入金額/備註後送出"]
+    D --> H["saveRecord() 驗證欄位"]
+    H --> E{{"類別來源"}}
+    E -->|"Grid 手動"| F["使用選擇的類別"]
+    F --> I{{"定位取得 getLastLocation()"}}
+    E -->|"AI 自動"| G["saveWithPlaceholderThenAutoSelect()" ]
+    I -->|"預取成功"| J["使用預取座標寫入"]
+    I -->|"關閉或失敗"| L["以 0,0 儲存"]
+    J --> M["performDatabaseSave() 寫入 SQLite"]
+    L --> M
+    M --> N["completeSave() 清空欄位"]
+    N --> O{{"自動跳歷史?"}}
+    O -->|"是"| P["startActivity(HistoryActivity)"]
+    O -->|"否"| D
+    G --> R["AutoCategoryService.start() 背景分類"]
+    R --> Z["廣播 ACTION_RECORD_UPDATED"]
+    Z --> I
+</div></code></pre>
+<h3 id="historyactivityjava"><code>HistoryActivity.java</code></h3>
+<ul>
+<li>功能：顯示歷史清單與總額、提供 CSV 匯入/匯出/分享、接收自動分類更新廣播。</li>
+<li>主要 UI：<code>historyListView</code>, <code>totalAmountText</code>, <code>cardTotal</code>, <code>historyToolbar</code>, <code>fabAdd</code></li>
+<li>主要流程：
+<ol>
+<li><code>loadRecords()</code> 背景讀取 SQLite，計算總額並更新 ListView。</li>
+<li><code>recordUpdatedReceiver</code> 接收廣播後重新載入並動畫提示。</li>
+<li><code>exportToFile()</code>/<code>shareByCsv()</code> 產出 CSV；<code>importFromCsv()</code> 可 Append/Overwrite。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>、<code>CsvHelper</code></li>
+<li>版面資源：<code>activity_history.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["onCreate() 綁定 Toolbar/ListView"] --> B["loadRecords() 背景查 SQLite"]
+    B --> C["計算總額/筆數並更新卡片"]
+    C --> D["setAdapter() 顯示 ListView"]
+    D --> E{{"使用者操作"}}
+    E -->|"點擊項目"| F["開啟 EditRecordActivity"]
+    E -->|"匯出分享"| G["CsvHelper.shareCsv()/exportToFile()"]
+    E -->|"匯入"| H["CsvHelper.importCsv() 解析/寫入"]
+    I["Broadcast ACTION_RECORD_UPDATED"] --> B
+</div></code></pre>
+<h3 id="editrecordactivityjava"><code>EditRecordActivity.java</code></h3>
+<ul>
+<li>功能：編輯或刪除單筆紀錄，支援時間調整、地圖預覽、跳轉全螢幕地圖。</li>
+<li>主要 UI：<code>editAmountInput</code>, <code>editNoteInput</code>, <code>editTimeInput</code>, <code>editCategoryGrid</code>, <code>mapContainer</code></li>
+<li>主要流程：
+<ol>
+<li>由 Intent 取得紀錄資料並填入欄位。</li>
+<li><code>showDateTimePicker()</code> 修改時間。</li>
+<li>若有座標則顯示地圖與地址；點擊地圖卡片開啟 <code>FullMapActivity</code>。</li>
+<li><code>handlePrimaryAction()</code> 判斷是否變更，更新或刪除。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>、<code>Geocoder</code></li>
+<li>版面資源：<code>activity_edit_record.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["接收 Intent(id 等欄位)"] --> B["填入金額/備註/時間"]
+    B --> C{{"是否有座標"}}
+    C -->|"有"| D["顯示地圖預覽 + 逆地理文字"]
+    D --> E["點擊開啟 FullMapActivity"]
+    C -->|"無"| F["隱藏地圖卡片"]
+    E --> G{{"使用者操作"}}
+    F --> G
+    G -->|"修改並更新"| H["handlePrimaryAction() 更新 SQLite"]
+    G -->|"按下刪除按鈕"| I["刪除確認 Dialog"]
+</div></code></pre>
+<h3 id="chartactivityjava"><code>ChartActivity.java</code></h3>
+<ul>
+<li>功能：依類別彙總金額並輸出總額、筆數、平均與條狀圖，給使用者快速掌握支出結構。</li>
+<li>主要 UI：<code>totalAmountText</code>、<code>totalCountText</code>、<code>averageAmountText</code>、<code>chartContainer</code>（動態加入 <code>item_chart_bar.xml</code>）。</li>
+<li>主要流程：
+<ol>
+<li><code>loadChart()</code> 以背景執行緒呼叫 <code>DatabaseHelper.readRecordList()</code>，將 <code>Record</code> 依類別聚合並計算總額與平均。</li>
+<li>聚合結果排序後交給 <code>renderChart()</code>，依最大值計算百分比並產生每個條狀項目。</li>
+<li>點擊 Toolbar 返回或旋轉螢幕時會重新渲染，確保資料與 UI 同步。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code> 的記帳表查詢。</li>
+<li>版面資源：<code>activity_chart.xml</code>、<code>item_chart_bar.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["onCreate() 綁定 Toolbar"] --> B["loadChart() 啟動背景查詢"]
+    B --> C["DatabaseHelper.readRecordList() 取得 Record 清單"]
+    C --> D["依類別聚合金額/計數"]
+    D --> E["計算總額/平均/排序"]
+    E --> F["renderChart() 產生條狀項目"]
+    F --> G["設定 TextView 顯示統計"]
+</div></code></pre>
+<h3 id="fullmapactivityjava"><code>FullMapActivity.java</code></h3>
+<ul>
+<li>功能：放大顯示單筆紀錄的位置，允許修改「地點備註」並寫回資料庫，補充主畫面地圖卡的詳細資訊。</li>
+<li>主要 UI：<code>SupportMapFragment</code>、<code>locationNameView</code>、<code>locationCard</code>、<code>editLocationName()</code> 的 Dialog。</li>
+<li>主要流程：
+<ol>
+<li>從 Intent 讀取經緯度與現有地點名稱，初始化 GoogleMap 並置入 Marker。</li>
+<li><code>onMapReady()</code> 以 <code>CameraUpdateFactory</code> 聚焦並更新卡片文字；點擊卡片呼叫 <code>showEditLocationDialog()</code>。</li>
+<li>使用者輸入新的地點備註後呼叫 <code>DatabaseHelper.updateRecordLocationName()</code> 寫回並重新顯示。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>（更新記錄欄位）。</li>
+<li>版面資源：<code>activity_full_map.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["接收 Intent(recordId, lat, lng, name)"] --> B["onMapReady() 顯示 Marker"]
+    B --> C["相機縮放/顯示名稱"]
+    C --> D["點擊地點名稱卡片"]
+    D --> E["showEditLocationDialog() 輸入備註"]
+    E --> F["DatabaseHelper.updateRecordLocationName()"]
+    F --> D
+</div></code></pre>
+<h3 id="settingsactivityjava"><code>SettingsActivity.java</code></h3>
+<ul>
+<li>功能：集中管理定位、主題、自動分類 API、Google 登入、雲端備份/還原、週期性通知等偏好設定。</li>
+<li>主要 UI：多組 <code>MaterialSwitch</code>、API Key/URL <code>TextInputEditText</code>、雲端備份/還原按鈕、偵錯資料插入按鈕。</li>
+<li>主要流程：
+<ol>
+<li>啟動時從 <code>SharedPreferences</code> 載入各項設定並綁定 UI；切換定位、自動跳歷史、預設類別、自動分類 API 時立即寫回偏好。</li>
+<li><code>handleGoogleSignIn()</code> 透過 <code>GoogleSignInClient</code> 取得 IdToken，<code>FirebaseAuth</code> 登入成功後啟用 CloudBackup，並可手動 <code>syncNow()</code> 或 <code>restoreFromCloud()</code>。</li>
+<li>週期性付款的提醒開關會呼叫 <code>RecurringPaymentWorker.schedule()</code> 與 <code>RecurringPaymentAlarmReceiver.scheduleAllMinute()</code>，確保排程更新。</li>
+</ol>
+</li>
+<li>資料來源：<code>SharedPreferences</code>、<code>FirebaseAuth</code>、<code>GoogleSignInClient</code>、<code>CloudBackupManager</code>。</li>
+<li>版面資源：<code>activity_settings.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["onCreate() 綁定所有 Switch/Input"] --> B["讀取 SharedPreferences" ]
+    B --> C["即時 setOnCheckedChangeListener() 寫回偏好"]
+</div></code></pre>
+<h3 id="statuschipservicejava"><code>StatusChipService.java</code></h3>
+<ul>
+<li>功能：在使用者離開 App 時，以 Overlay 顯示最近總額 5 秒鐘，提供快速確認。</li>
+<li>主要流程：
+<ol>
+<li>由 <code>MainActivity.onUserLeaveHint()</code> 或返回鍵觸發，先檢查 <code>Settings.canDrawOverlays()</code> 權限。</li>
+<li>背景執行 <code>DatabaseHelper.getTotalAmount()</code> 取得總額，組合顯示文字與關閉計時器。</li>
+<li><code>WindowManager.addView()</code> 顯示 <code>activity_status_chip.xml</code>，5 秒後自動 <code>removeView()</code>。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>。</li>
+<li>版面資源：<code>activity_status_chip.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["onStartCommand() 收到觸發"] --> B{{"Overlay 權限?"}}
+    B -->|"有"| C["背景讀取 getTotalAmount()"]
+    B -->|"無"| D["顯示無法覆蓋訊息"]
+    C --> E["WindowManager 顯示 Chip"]
+    E --> F["Handler 延遲 5 秒移除"]
+</div></code></pre>
+<h3 id="autocategoryservicejava"><code>AutoCategoryService.java</code></h3>
+<ul>
+<li>功能：在背景呼叫 AI API 決定自動分類，寫回資料庫、觸發雲端備份並廣播更新，維持前景 UI 即時性。</li>
+<li>主要流程：
+<ol>
+<li>由 <code>MainActivity.saveWithPlaceholderThenAutoSelect()</code> 帶入紀錄 ID、金額、備註與候選類別；服務啟動後讀取 <code>SharedPreferences</code> 取 API Key/URL。</li>
+<li><code>AutoCategoryClient.requestAutoCategory()</code> 組合模型、提示詞與候選列表發出 HTTP 請求，若主模型無效自動切換備援模型再試。</li>
+<li>取得結果後 <code>DatabaseHelper.updateRecordCategory()</code> 寫回，<code>CloudBackupManager.requestSyncIfEnabled()</code> 同步 Firestore，並 <code>sendBroadcast(ACTION_RECORD_UPDATED)</code> 提醒 UI 重載。</li>
+</ol>
+</li>
+<li>資料來源：<code>AutoCategoryClient</code>、<code>DatabaseHelper</code>、<code>CloudBackupManager</code>。</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["Service onStartCommand(recordId, amount, note, options)"] --> B["讀取 API Key/URL"]
+    B --> C["呼叫 OpenAI API 推理類別"]
+    C --> D{{"取得類別?"}}
+    D -->|"是"| E["updateRecordCategory() 寫回 SQLite"]
+    D -->|"否"| F["回退預設 '其他'"]
+    E --> G["觸發雲端同步"]
+    F --> G
+    G --> H["廣播通知 UI 更新"]
+</div></code></pre>
+<h3 id="autocategoryclientjava"><code>AutoCategoryClient.java</code></h3>
+<ul>
+<li>功能：封裝 OpenAI 或 GitHub Models 的 HTTP 呼叫、模型 fallback 與 JSON 解析，確保自動分類穩定取得結果。</li>
+<li>主要流程：
+<ol>
+<li><code>normalizeApiUrl()</code>/<code>normalizeToken()</code> 將使用者輸入的 URL 與 Token 標準化，避免重複的 slash 或 header 格式錯誤。</li>
+<li><code>requestOnce()</code> 建立 prompt/候選列表後送出 POST，依 HTTP 代碼或 response 內容判斷模型有效性。</li>
+<li>若模型無效則 <code>getFallbackModel()</code> 選擇備援名稱並重試；成功時 <code>parseCategoryFromResponse()</code> 解析訊息內容回傳單一分類字串。</li>
+</ol>
+</li>
+<li>資料來源：外部 AI API（OpenAI/GitHub Models）。</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["normalizeApiUrl()/normalizeToken() 處理輸入"] --> B["requestOnce() 組 JSON 並送出"]
+    B --> C{{"回應成功?"}}
+    C -->|"是"| D["parseCategoryFromResponse() 解析類別"]
+    C -->|"否"| E{{"有備援模型?"}}
+    E -->|"是"| F["切換 fallback 後重試"]
+    F --> C
+    E -->|"否"| G["回傳 null 表示失敗"]
+</div></code></pre>
+<h3 id="managecategoriesactivityjava"><code>ManageCategoriesActivity.java</code></h3>
+<ul>
+<li>功能：提供類別的新增、刪除與拖曳排序，並即時寫回 SQLite 以便主畫面/自動分類使用一致的類別列表。</li>
+<li>主要 UI：<code>RecyclerView</code> 類別清單、輸入框、<code>addCategoryButton</code>、<code>ItemTouchHelper</code> 拖曳手把。</li>
+<li>主要流程：
+<ol>
+<li><code>loadCategories()</code> 於背景讀取類別並以 <code>CategoryAdapter</code> 套用顏色樣式後顯示。</li>
+<li><code>ItemTouchHelper</code> 的 <code>onMove()</code> 交換列表位置並 <code>clearView()</code> 內迭代呼叫 <code>updateCategoryOrder()</code> 寫回排序欄位。</li>
+<li>長按刪除圖示時彈出確認 Dialog，確認後 <code>deleteCategory()</code> 並重新整理列表。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>。</li>
+<li>版面資源：<code>activity_manage_categories.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["onCreate() 綁定 RecyclerView"] --> B["loadCategories() 背景查詢"]
+    B --> C["顯示 CategoryAdapter"]
+    C --> D{"拖曳/刪除動作"}
+    D -->|"拖曳"| E["onMove() 交換順序"]
+    E --> F["clearView() updateCategoryOrder() 寫回"]
+    D -->|"刪除"| G["彈窗確認後 deleteCategory()"]
+    G --> B
+</div></code></pre>
+<h3 id="databasehelperjava"><code>DatabaseHelper.java</code></h3>
+<ul>
+<li>功能：集中管理 SQLite（records、categories、recurring_payments）建表與 CRUD；供主畫面、歷史、圖表、週期性付款與雲端備份共用。</li>
+<li>主要流程：
+<ol>
+<li><code>onCreate()</code> 建立三張表並呼叫 <code>seedCategories()</code> 插入預設類別；<code>onUpgrade()</code> 覆蓋重建處理版本升級。</li>
+<li>提供 <code>insertRecordAndReturnId()</code>、<code>updateRecord()</code>、<code>deleteRecord()</code> 等方法，並支援批次匯入與排序更新。</li>
+<li><code>getTotalAmount()</code> 為離開提示、<code>readRecordList()</code> 為圖表與歷史頁提供資料，<code>readRecurringPayments()</code>/<code>updateRecurringPayment()</code> 支援排程。</li>
+</ol>
+</li>
+<li>資料來源：內建 SQLite。</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["SQLiteOpenHelper.onCreate() 建表"] --> B["seedCategories() 預設類別"]
+    B --> C["CRUD: insert/update/delete/query"]
+    C --> D["getTotalAmount()/readRecordList() 提供前景"]
+    C --> E["readRecurringPayments()/updateCategoryOrder() 等輔助"]
+</div></code></pre>
+<h3 id="csvhelperjava"><code>CsvHelper.java</code></h3>
+<ul>
+<li>功能：處理 CSV 匯出/匯入、分享與座標轉換，確保跨裝置資料可攜。</li>
+<li>主要流程：
+<ol>
+<li><code>generateCsvContent(records)</code> 把 <code>Record</code> 清單轉成含地點文字與經緯度的 CSV 字串。</li>
+<li><code>writeCsvToUri()</code>/<code>shareCsv()</code> 透過 <code>FileProvider</code> 暴露 content URI 供分享或儲存。</li>
+<li><code>importCsv()</code> 逐列解析，先用 <code>Geocoder</code> 反查座標，再回傳 <code>Record</code> 清單給呼叫端寫入 SQLite。</li>
+</ol>
+</li>
+<li>資料來源：<code>Geocoder</code>、<code>FileProvider</code>、<code>DatabaseHelper</code>（寫入端）。</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["Record 清單"] --> B["generateCsvContent() 輸出 CSV 字串"]
+    B --> C{"動作"}
+    C -->|"分享"| D["shareCsv() 用 FileProvider"]
+    C -->|"存檔"| E["writeCsvToUri() 寫入 URI"]
+    F["importCsv() 讀檔"] --> G["逐列解析 + Geocoder 座標"]
+    G --> H["回傳 Record 清單供寫入"]
+</div></code></pre>
+<h3 id="cloudbackupindicatorjava--cloudbackupmanagerjava"><code>CloudBackupIndicator.java</code> + <code>CloudBackupManager.java</code></h3>
+<ul>
+<li>功能：<code>CloudBackupIndicator</code> 負責 UI 提示與狀態呈現；<code>CloudBackupManager</code> 負責雲端同步/還原/驗證，兩者透過偏好與狀態更新形成完整雲端備份流程。</li>
+<li>主要流程：
+<ol>
+<li><code>SettingsActivity</code> 切換雲端備份或登入狀態後，<code>CloudBackupIndicator.register()</code> 監聽偏好變化，先行更新 icon 與提示。</li>
+<li><code>CloudBackupManager.syncNow()</code> 讀取本地 SQLite（records/categories/recurring_payments）組成 payload，上傳到 <code>users/{uid}/backups/latest</code>，並排程 <code>scheduleVerify()</code> 做筆數驗證。</li>
+<li>驗證成功/失敗時更新 <code>CloudBackupManager.Status</code>，<code>CloudBackupIndicator</code> 再次刷新雲朵 icon 與 Snackbar，讓使用者知道同步結果。</li>
+<li>使用者手動還原時 <code>restoreFromCloud()</code> 下載最新備份，背景寫回 SQLite，並重新排程 WorkManager/Alarm，確保週期性付款不漏。</li>
+</ol>
+</li>
+<li>資料來源：<code>SharedPreferences</code>、<code>FirebaseAuth</code>、<code>FirebaseFirestore</code>、<code>DatabaseHelper</code>、<code>CloudBackupManager.Status</code>。</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["SettingsActivity 切換雲端備份/登入"] --> B["CloudBackupIndicator.register() 監聽偏好"]
+    B --> C["updateIcon()/showStatusSnackbar() 初始提示"]
+    C --> D["CloudBackupManager.syncNow()"]
+    D --> E["讀取 SQLite records/categories/recurring"]
+    E --> F["Firestore backups/latest 上傳"]
+    F --> G["scheduleVerify() 筆數驗證"]
+    G --> H{"筆數一致?"}
+    H -->|"是"| I["updateStatus(SUCCESS)"]
+    H -->|"否"| J["updateStatus(ERROR)"]
+    I --> K["CloudBackupIndicator 更新 icon/snackbar"]
+    J --> K
+    L["restoreFromCloud() 手動還原"] --> M["下載最新備份"]
+    M --> N["寫回 SQLite"]
+    N --> O["重新排程 WorkManager/Alarm"]
+    O --> K
+</div></code></pre>
+<h3 id="recurringpaymentjava--recurringpaymentactivityjava--recurringpaymentadapterjava"><code>RecurringPayment.java</code> + <code>RecurringPaymentActivity.java</code> + <code>RecurringPaymentAdapter.java</code></h3>
+<ul>
+<li>功能：<code>RecurringPayment</code> 定義週期性付款資料；<code>RecurringPaymentActivity</code> 讀取並管理清單；<code>RecurringPaymentAdapter</code> 把模型轉成可讀的頻率文案與列表項目。</li>
+<li>主要流程：
+<ol>
+<li><code>RecurringPaymentActivity.onCreate()</code> 綁定 ListView/FAB，呼叫 <code>loadRecurringList()</code> 於背景從 SQLite 取出 <code>RecurringPayment</code> 清單。</li>
+<li><code>RecurringPaymentAdapter.getView()</code> 依 <code>frequency/weekday/day/hour/minute</code> 組合標題與描述（如「每週三 12:00」「每分鐘」），並設定點擊回呼。</li>
+<li>使用者點擊項目時開啟 <code>RecurringPaymentEditActivity</code> 編輯；刪除全部時呼叫 <code>deleteAllRecurringPayments()</code>；<code>onPause()</code> 重新排程 Worker/Alarm。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>。</li>
+<li>版面資源：<code>activity_recurring_payment.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["RecurringPaymentActivity.onCreate()"] --> B["loadRecurringList() 背景查詢 SQLite"]
+    B --> C["取得 RecurringPayment 模型清單"]
+    C --> D["RecurringPaymentAdapter.getView() 組合標題/頻率說明"]
+    D --> E["ListView 顯示清單"]
+    E --> F{"使用者操作"}
+    F -->|"點擊項目"| G["開啟 RecurringPaymentEditActivity"]
+    F -->|"刪除全部"| H["deleteAllRecurringPayments()"]
+    G --> I["返回後 loadRecurringList() 重刷"]
+    H --> I
+    I --> J["onPause() 重新排程 Worker/Alarm"]
+</div></code></pre>
+<h3 id="recurringpaymenteditactivityjava"><code>RecurringPaymentEditActivity.java</code></h3>
+<ul>
+<li>功能：新增或編輯週期性付款，依不同頻率顯示對應的輸入欄位，並在儲存後自動排程背景任務。</li>
+<li>主要流程：
+<ol>
+<li><code>setupFrequencyGroup()</code> 切換 <code>minute/week/day</code> 等輸入元件的可見度，確保表單正確。</li>
+<li><code>save()</code> 驗證金額與頻率後呼叫 <code>DatabaseHelper.insertOrUpdateRecurringPayment()</code> 寫入，接著 <code>RecurringPaymentWorker.schedule()</code> 與 <code>RecurringPaymentAlarmReceiver.scheduleAllMinute()</code> 重新排程。</li>
+<li><code>handlePrimaryAction()</code> 判斷是否為編輯模式，決定更新/刪除並回傳結果給列表頁。</li>
+</ol>
+</li>
+<li>資料來源：<code>DatabaseHelper</code>。</li>
+<li>版面資源：<code>activity_recurring_payment_edit.xml</code></li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["onCreate() 載入表單"] --> B["setupFrequencyGroup() 切換輸入"]
+    B --> C{{"點擊儲存?"}}
+    C -->|"是"| D["save() 寫入 SQLite"]
+    D --> E["排程 Worker/Alarm"]
+    C -->|"刪除"| F["deleteRecurringPayment()"]
+</div></code></pre>
+<h3 id="recurringpaymentworkerjava"><code>RecurringPaymentWorker.java</code></h3>
+<ul>
+<li>功能：每日由 WorkManager 觸發，檢查非 minute 類型的週期性付款是否到期，並自動插入紀錄、發通知與雲端同步。</li>
+<li>主要流程：
+<ol>
+<li><code>doWork()</code> 讀取所有 recurring 資料，對 daily/weekly/monthly 逐筆判斷 <code>shouldInsertToday()</code>。</li>
+<li>若到期則 <code>insertRecordAndReturnId()</code> 寫入記帳、更新 <code>lastRunAt</code>，並透過 <code>NotificationHelper</code> 通知使用者。</li>
+<li>最後呼叫 <code>CloudBackupManager.requestSyncIfEnabled()</code> 同步備份。</li>
+</ol>
+</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["WorkManager 觸發 doWork()"] --> B["讀取 recurring_payments"]
+    B --> C{{"shouldInsertToday()?"}}
+    C -->|"是"| D["insertRecordAndReturnId()"]
+    D --> E["更新 lastRunAt"]
+    D --> F["NotificationHelper.showNotification()"]
+    F --> G["CloudBackupManager.requestSyncIfEnabled()"]; 
+    C -->|"否"| H["下一筆"]
+</div></code></pre>
+<h3 id="recurringpaymentalarmreceiverjava"><code>RecurringPaymentAlarmReceiver.java</code></h3>
+<ul>
+<li>功能：偵錯用，負責 minute 頻率的 AlarmManager 觸發，精準到每分鐘寫入記帳並重新排程下一次。</li>
+<li>主要流程：
+<ol>
+<li><code>scheduleAllMinute()</code> 於設定頁或開機時取得 minute 項目並為每筆排程 Alarm。</li>
+<li><code>onReceive()</code> 取得對應 recurring，呼叫 <code>insertRecordAndReturnId()</code> 插入紀錄、<code>NotificationHelper</code> 通知，最後以 <code>scheduleNextMinute()</code> 為該筆排下一次。</li>
+<li>執行後同樣會呼叫 <code>CloudBackupManager.requestSyncIfEnabled()</code>，維持雲端一致。</li>
+</ol>
+</li>
+</ul>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TD
+    A["scheduleAllMinute() 排程所有 minute 項目"] --> B["AlarmManager at exact minute"]
+    B --> C["onReceive() 讀 recurring 資料"]
+    C --> D["insertRecordAndReturnId() 寫入"]
+    D --> E["NotificationHelper.showNotification()"]
+    E --> F["CloudBackupManager.requestSyncIfEnabled()"]
+    D --> G["scheduleNextMinute() 重新排程"]
+</div></code></pre>
+<hr>
+<h2 id="%E4%BA%94%E7%B5%90%E6%9E%9C%E5%B1%95%E7%A4%BA5-%E5%88%86">五、結果展示（5 分）</h2>
+<h3 id="%E8%88%87%E5%85%B6%E4%BB%96-app-%E7%9A%84%E6%AF%94%E8%BC%83%E8%A1%A8">與其他 App 的比較表</h3>
+<table>
+<thead>
+<tr>
+<th>面向</th>
+<th>Simplest Book Android</th>
+<th>簡單記帳</th>
+<th>SimplestKeepingPWA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>平台/型態</td>
+<td>Android App</td>
+<td>Android App</td>
+<td>PWA（瀏覽器/可安裝/跨平台）</td>
+</tr>
+<tr>
+<td>離線可用</td>
+<td>是</td>
+<td>是</td>
+<td>寫入讀取需要網路</td>
+</tr>
+<tr>
+<td>CSV 匯入/匯出</td>
+<td>有</td>
+<td>無</td>
+<td>有</td>
+</tr>
+<tr>
+<td>雲端備份/還原</td>
+<td>有</td>
+<td>有</td>
+<td>伺服器端讀寫</td>
+</tr>
+<tr>
+<td>週期性付款</td>
+<td>有</td>
+<td>有</td>
+<td>無</td>
+</tr>
+<tr>
+<td>統計圖表</td>
+<td>有</td>
+<td>有</td>
+<td>有</td>
+</tr>
+<tr>
+<td>位置/地圖</td>
+<td>有</td>
+<td>無</td>
+<td>無</td>
+</tr>
+<tr>
+<td>AI 自動分類</td>
+<td>有</td>
+<td>無</td>
+<td>無</td>
+</tr>
+<tr>
+<td>特色差異</td>
+<td>快速極簡 + 進階功能整合</td>
+<td>發票匯入功能</td>
+<td>免安裝、跨平台</td>
+</tr>
+</tbody>
+</table>
+<h3 id="%E5%B1%95%E7%A4%BA%E5%AF%A6%E9%9A%9B%E5%9F%B7%E8%A1%8C%E6%88%90%E6%9E%9C%E8%88%87%E7%95%AB%E9%9D%A2%E6%88%AA%E5%9C%96">展示實際執行成果與畫面截圖</h3>
+<ul>
+<li>
+<p>主畫面：輸入金額、備註，類別 Grid 選擇與儲存。
+<img src="./screenshots/main.jpg" alt="">
+<img src="./screenshots/main1.jpg" alt=""></p>
+</li>
+<li>
+<p>歷史清單：總額卡片、ListView 列表、CSV 匯出/匯入入口。
+<img src="./screenshots/history.jpg" alt="">
+<img src="./screenshots/csv.jpg" alt="">
+<img src="./screenshots/csv1.jpg" alt=""></p>
+</li>
+<li>
+<p>編輯紀錄：時間修改、類別切換、地圖預覽。
+<img src="./screenshots/edit_record.jpg" alt="">
+<img src="./screenshots/map.jpg" alt=""></p>
+</li>
+<li>
+<p>圖表統計：類別長條圖、總額/筆數/平均。
+<img src="./screenshots/histogram.jpg" alt=""></p>
+</li>
+<li>
+<p>週期性付款：清單與編輯頁。
+<img src="./screenshots/monthly_pay.jpg" alt="">
+<img src="./screenshots/monthly_pay1.jpg" alt="">
+<img src="./screenshots/monthly_pay2.jpg" alt=""></p>
+</li>
+<li>
+<p>設定頁：雲端備份、Google 登入、API 設定。
+<img src="./screenshots/backup.jpg" alt="">
+<img src="./screenshots/setting.jpg" alt=""></p>
+</li>
+<li>
+<p>退出時狀態提示：Overlay 顯示累計金額。
+<img src="./screenshots/accumulate.jpg" alt=""></p>
+</li>
+</ul>
+<p>Simplest Book Android 是一款主打「快速、極簡」的記帳 App，以最少步驟完成記錄，同時提供週期性付款、位置備註、統計圖表與雲端備份等功能。</p>
+<h3 id="%E5%8A%9F%E8%83%BD%E7%89%B9%E8%89%B2">功能特色</h3>
+<ul>
+<li><strong>極速記帳</strong>：輸入金額與備註、選類別即可完成儲存。</li>
+<li><strong>自動分類（選用）</strong>：可先以「其他」存檔，背景由 AI 自動回填類別。</li>
+<li><strong>歷史與編輯</strong>：查詢清單、編輯金額/備註/時間/地點備註。</li>
+<li><strong>統計圖表</strong>：依類別彙總金額、筆數與平均。</li>
+<li><strong>週期性付款</strong>：每日/每週/每月/每年與每分鐘排程通知。</li>
+<li><strong>定位支援</strong>：可選擇記錄座標，並在地圖頁顯示與補充備註。</li>
+<li><strong>CSV 匯入匯出</strong>：支援分享、匯出與匯入資料。</li>
+<li><strong>雲端備份</strong>：Firestore 同步與還原，狀態圖示提示。</li>
+<li><strong>離開提示</strong>：離開 App 顯示總額小視窗。</li>
+</ul>
+<h3 id="%E7%B0%A1%E5%8C%96%E6%95%B4%E9%AB%94%E6%9E%B6%E6%A7%8B">簡化整體架構</h3>
+<p>App 以 SQLite 為核心資料庫，搭配背景服務完成同步與自動化。</p>
+<pre class="hljs"><code><div>UI (Activities)
+  - MainActivity：輸入、類別選擇、儲存
+  - HistoryActivity：列表 + CSV 匯入/匯出
+  - EditRecordActivity / FullMapActivity：編輯 + 地點備註
+  - ChartActivity：統計彙整
+  - SettingsActivity：偏好設定 + 雲端登入
+  - RecurringPaymentActivity/Edit：週期性付款管理
+
+Local Data
+  - DatabaseHelper (SQLite)
+  - Models：Record, Category, RecurringPayment
+  - Adapters：CategoryAdapter, RecordAdapter, RecurringPaymentAdapter
+
+Background + Services
+  - AutoCategoryService + AutoCategoryClient（AI 自動分類）
+  - RecurringPaymentWorker / RecurringPaymentAlarmReceiver
+  - CloudBackupManager + CloudBackupIndicator
+  - StatusChipService
+</div></code></pre>
+<h3 id="%E4%B8%BB%E8%A6%81%E6%B5%81%E7%A8%8B%E7%B0%A1%E8%BF%B0">主要流程（簡述）</h3>
+<ol>
+<li>
+<p><strong>新增記帳</strong></p>
+<ul>
+<li>MainActivity 驗證輸入 → 取得類別/座標 → 寫入 SQLite。</li>
+<li>若啟用自動分類，AutoCategoryService 背景更新類別。</li>
+<li>若啟用雲端備份，觸發同步。</li>
+</ul>
+</li>
+<li>
+<p><strong>週期性付款</strong></p>
+<ul>
+<li>RecurringPaymentActivity 管理項目並寫入 SQLite。</li>
+<li>WorkManager 處理日/週/月/年；AlarmManager 處理每分鐘。</li>
+</ul>
+</li>
+<li>
+<p><strong>雲端備份</strong></p>
+<ul>
+<li>SettingsActivity 開啟備份並完成 Google 登入。</li>
+<li>CloudBackupManager 上傳/驗證或從雲端還原資料。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="%E5%85%AD%E4%BD%BF%E7%94%A8%E8%AA%B2%E5%A0%82%E4%B8%8A%E6%89%80%E5%AD%B8%E6%8A%80%E8%A1%93%E8%AA%AA%E6%98%8E">六、使用課堂上所學技術說明</h2>
+<p>以下重新整理技術分類，補上使用位置、觸發流程與上下文說明，並引用實作程式碼片段呈現完整脈絡。</p>
+<h3 id="%E4%B8%80%E4%BD%BF%E7%94%A8%E5%88%B0%E7%9A%84%E5%A4%96%E9%83%A8-api-%E6%8A%80%E8%A1%9310-%E5%88%86">（一）使用到的外部 API 技術（10 分）</h3>
+<ul>
+<li>API 名稱：OpenAI API（亦支援 GitHub Models URL）</li>
+<li>使用位置：AutoCategoryClient.java、AutoCategoryService.java</li>
+<li>使用情境：使用者快速記帳且未手動選類別時，交由 AI 自動判斷分類。</li>
+<li>觸發流程：主畫面預設類別設為自動時，<code>saveWithPlaceholderThenAutoSelect()</code> 先把紀錄以「其他」存入資料庫，再交給 <code>AutoCategoryService.start()</code> 進入背景呼叫 API；回傳後寫回類別並觸發雲端同步與廣播通知。</li>
+<li>程式碼（服務啟動 + API 請求 + 寫回）：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// MainActivity.java - 將資料交給背景分類</span>
+saveRecordWithCategory(amount, placeholder, note, recordId -&gt; {
+    AutoCategoryService.start(<span class="hljs-keyword">this</span>, recordId, amount, note, <span class="hljs-keyword">new</span> ArrayList&lt;&gt;(options));
+});
+
+<span class="hljs-comment">// AutoCategoryService.java - 背景取得結果並寫回</span>
+String selected = AutoCategoryClient.requestAutoCategory(
+        prefs, apiKey, apiUrl, amount, note, optionList);
+dbHelper.updateRecordCategory(recordId, selected);
+CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
+sendBroadcast(updateIntent);
+</div></code></pre>
+<ul>
+<li>說明：<code>AutoCategoryClient</code> 會根據 API URL/Token 組合請求、在模型不可用時嘗試備援模型，再將解析的類別更新 SQLite，確保前景 UI 透過廣播即時刷新分類結果。</li>
+</ul>
+<hr>
+<h3 id="%E4%BA%8C%E8%AA%B2%E5%A0%82%E6%8A%80%E8%A1%93%E4%B8%80broadcast-%E7%99%BC%E9%80%81%E8%88%87%E6%8E%A5%E6%94%B6">（二）課堂技術一：Broadcast 發送與接收</h3>
+<ul>
+<li>使用位置：AutoCategoryService.java、HistoryActivity.java</li>
+<li>使用情境：背景分類完成後即時刷新歷史清單，避免手動重整。</li>
+<li>觸發流程：背景分類完成後送廣播，歷史頁收到後重讀資料。</li>
+<li>程式碼（發送 + 接收 + 重新載入）：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// AutoCategoryService.java - 寫回後廣播給前景頁面</span>
+Intent updateIntent = <span class="hljs-keyword">new</span> Intent(ACTION_RECORD_UPDATED);
+updateIntent.putExtra(<span class="hljs-string">"extra_record_id"</span>, recordId);
+updateIntent.putExtra(<span class="hljs-string">"extra_category"</span>, selected);
+sendBroadcast(updateIntent);
+
+<span class="hljs-comment">// HistoryActivity.java - 註冊並依 recordId 重載資料</span>
+IntentFilter filter = <span class="hljs-keyword">new</span> IntentFilter(AutoCategoryService.ACTION_RECORD_UPDATED);
+ContextCompat.registerReceiver(<span class="hljs-keyword">this</span>, recordUpdatedReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> BroadcastReceiver recordUpdatedReceiver = <span class="hljs-keyword">new</span> BroadcastReceiver() {
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onReceive</span><span class="hljs-params">(Context context, Intent intent)</span> </span>{
+        String recordId = intent != <span class="hljs-keyword">null</span> ? intent.getStringExtra(<span class="hljs-string">"extra_record_id"</span>) : <span class="hljs-keyword">null</span>;
+        String category = intent != <span class="hljs-keyword">null</span> ? intent.getStringExtra(<span class="hljs-string">"extra_category"</span>) : <span class="hljs-keyword">null</span>;
+        loadRecords(recordId, category);
+    }
+};
+</div></code></pre>
+<ul>
+<li>說明：廣播攜帶紀錄 ID 與新類別，歷史頁依參數決定動畫與提示訊息，避免輪詢資料庫並能精準刷新單筆項目。</li>
+</ul>
+<hr>
+<h3 id="%E4%B8%89%E8%AA%B2%E5%A0%82%E6%8A%80%E8%A1%93%E4%BA%8Csqliteopenhelper">（三）課堂技術二：SQLiteOpenHelper</h3>
+<ul>
+<li>使用位置：DatabaseHelper.java（記帳/類別/週期性三張表）</li>
+<li>使用情境：在無網路環境也能寫入與查詢記帳資料。</li>
+<li>觸發流程：存檔、編輯、刪除、匯入皆呼叫 CRUD。</li>
+<li>程式碼（建表 + 寫入 + 取總額）：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// DatabaseHelper.java - onCreate() 建立三張表並塞預設類別</span>
+db.execSQL(TABLE_RECORDS_CREATE);
+db.execSQL(TABLE_CATEGORIES_CREATE);
+db.execSQL(TABLE_RECURRING_CREATE);
+seedCategories(db);
+
+<span class="hljs-comment">// MainActivity.java - performDatabaseSave() 背景執行寫入</span>
+String recordId = dbHelper.insertRecordAndReturnId(
+        amount, category, note, <span class="hljs-string">""</span>, System.currentTimeMillis(), lat, lon);
+
+<span class="hljs-comment">// DatabaseHelper.java - getTotalAmount() 給離開提示使用</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getTotalAmount</span><span class="hljs-params">()</span> </span>{ ... }
+</div></code></pre>
+<ul>
+<li>說明：SQLiteOpenHelper 封裝表結構與 CRUD，主畫面寫入與匯入 CSV 都共用同一個 helper，離線也能快速查詢並提供離開時的總額提示。</li>
+</ul>
+<hr>
+<h3 id="%E5%9B%9B%E8%AA%B2%E5%A0%82%E6%8A%80%E8%A1%93%E4%B8%89listview-%E8%88%87-gridview">（四）課堂技術三：ListView 與 GridView</h3>
+<ul>
+<li>使用位置：MainActivity.java（GridView）、HistoryActivity.java（ListView）</li>
+<li>使用情境：主畫面快速選類別，歷史清單點擊即可進入編輯。</li>
+<li>觸發流程：載入資料後綁定 Adapter，點擊項目觸發行為。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// MainActivity.java - 類別選擇 Grid</span>
+categoryAdapter = <span class="hljs-keyword">new</span> CategoryAdapter(<span class="hljs-keyword">this</span>, categories);
+categoryGrid.setAdapter(categoryAdapter);
+categoryGrid.setOnItemClickListener((parent, view, position, id) -&gt; {
+    String selectedName = categories.get(position).getName();
+    categoryAdapter.setSelectedCategory(selectedName);
+});
+
+<span class="hljs-comment">// HistoryActivity.java - 歷史紀錄 ListView</span>
+historyListView.setAdapter(adapter);
+historyListView.setOnItemClickListener((parent, view, position, id) -&gt; {
+    Record selectedRecord = recordList.get(position);
+    Intent intent = <span class="hljs-keyword">new</span> Intent(<span class="hljs-keyword">this</span>, EditRecordActivity<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;
+    intent.putExtra(<span class="hljs-string">"id"</span>, selectedRecord.getId());
+    ...
+    startActivity(intent);
+});
+</div></code></pre>
+<ul>
+<li>說明：GridView 以顏色框線呈現選取狀態，ListView 則讓使用者點擊進入編輯或匯出匯入，維持簡潔但可快速操作的 UI 流程。</li>
+</ul>
+<hr>
+<h3 id="%E4%BA%94%E8%AA%B2%E5%A0%82%E6%8A%80%E8%A1%93%E5%9B%9Bgoogle-map-%E8%88%87%E5%AE%9A%E4%BD%8D">（五）課堂技術四：Google Map 與定位</h3>
+<ul>
+<li>使用位置：MainActivity.java（定位）、FullMapActivity.java（地圖）</li>
+<li>使用情境：記帳時記錄消費位置，事後於地圖頁檢視與補充備註。</li>
+<li>觸發流程：存檔時取得座標；編輯頁/地圖頁顯示 Marker。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// MainActivity.java - 預抓或即時取得位置並寫入</span>
+fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, <span class="hljs-keyword">null</span>)
+        .addOnSuccessListener(location -&gt; {
+            <span class="hljs-keyword">if</span> (location != <span class="hljs-keyword">null</span>) {
+                preFetchedLat = location.getLatitude();
+                preFetchedLon = location.getLongitude();
+            }
+        });
+fusedLocationClient.getLastLocation().addOnSuccessListener(location -&gt; {
+    <span class="hljs-keyword">double</span> lat = <span class="hljs-number">0.0</span>, lon = <span class="hljs-number">0.0</span>;
+    <span class="hljs-keyword">if</span> (location != <span class="hljs-keyword">null</span>) { lat = location.getLatitude(); lon = location.getLongitude(); }
+    performDatabaseSave(amount, category, note, lat, lon, callback);
+});
+
+<span class="hljs-comment">// FullMapActivity.java - 以座標顯示地圖並允許編輯備註</span>
+googleMap.addMarker(<span class="hljs-keyword">new</span> MarkerOptions().position(location).title(<span class="hljs-string">"位置"</span>));
+locationNameView.setOnClickListener(v -&gt; showEditLocationDialog());
+</div></code></pre>
+<ul>
+<li>說明：定位流程同時支援預抓與即時 fallback，確保低延遲寫入；地圖頁再以 Marker 與地點備註呈現實際位置。</li>
+</ul>
+<hr>
+<h3 id="%E5%85%AD%E8%AA%B2%E5%A0%82%E6%8A%80%E8%A1%93%E4%BA%94service%E8%83%8C%E6%99%AF%E4%BB%BB%E5%8B%99">（六）課堂技術五：Service（背景任務）</h3>
+<ul>
+<li>使用位置：AutoCategoryService.java、StatusChipService.java</li>
+<li>使用情境：自動分類與離開提示在背景執行，避免阻塞前景。</li>
+<li>觸發流程：存檔後自動分類、離開 App 顯示總額。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// AutoCategoryService.java - Executor 背景呼叫 API 與資料庫</span>
+executor.execute(() -&gt; {
+    String selected = AutoCategoryClient.requestAutoCategory(...);
+    dbHelper.updateRecordCategory(recordId, selected);
+    CloudBackupManager.requestSyncIfEnabled(getApplicationContext());
+    sendBroadcast(updateIntent);
+    stopSelf(startId);
+});
+
+<span class="hljs-comment">// StatusChipService.java - 背景查詢總額後顯示 Overlay</span>
+<span class="hljs-keyword">new</span> Thread(() -&gt; {
+    <span class="hljs-keyword">int</span> total = dbHelper.getTotalAmount();
+    handler.post(() -&gt; showOverlay(total));
+}).start();
+</div></code></pre>
+<ul>
+<li>說明：將網路請求與資料庫操作放入背景執行緒或服務，避免主執行緒卡住；離開 App 仍能顯示總額提示，加強體驗。</li>
+</ul>
+<hr>
+<h3 id="%E5%85%AB%E8%AA%B2%E5%A0%82%E6%8A%80%E8%A1%93%E4%B8%83toast--dialog">（八）課堂技術七：Toast / Dialog</h3>
+<ul>
+<li>使用位置：MainActivity.java、HistoryActivity.java、EditRecordActivity.java</li>
+<li>使用情境：輸入驗證即時提示，刪除或匯入等動作需確認。</li>
+<li>觸發流程：輸入驗證、刪除確認、匯入結果提示。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// MainActivity.java - 未填金額立即提示</span>
+<span class="hljs-keyword">if</span> (amountStr.isEmpty()) {
+    Toast.makeText(<span class="hljs-keyword">this</span>, <span class="hljs-string">"請輸入金額"</span>, Toast.LENGTH_SHORT).show();
+    <span class="hljs-keyword">return</span>;
+}
+
+<span class="hljs-comment">// HistoryActivity.java - 匯入/匯出結果提示與選擇</span>
+<span class="hljs-keyword">new</span> MaterialAlertDialogBuilder(<span class="hljs-keyword">this</span>)
+        .setTitle(<span class="hljs-string">"匯入選項"</span>)
+        .setItems(options, (dialog, which) -&gt; { ... })
+        .setNegativeButton(<span class="hljs-string">"取消"</span>, <span class="hljs-keyword">null</span>)
+        .show();
+
+<span class="hljs-comment">// EditRecordActivity.java - 刪除確認對話框</span>
+<span class="hljs-keyword">new</span> MaterialAlertDialogBuilder(<span class="hljs-keyword">this</span>)
+        .setTitle(<span class="hljs-string">"確認刪除"</span>)
+        .setPositiveButton(<span class="hljs-string">"刪除"</span>, (dialog, which) -&gt; delete());
+</div></code></pre>
+<ul>
+<li>說明：Toast 用於即時輸入驗證或匯入狀態，Dialog 則在匯入、刪除或選擇動作時提供互動選項，降低誤觸風險。</li>
+</ul>
+<hr>
+<h2 id="%E4%B8%83%E4%BD%BF%E7%94%A8%E8%AA%B2%E5%A4%96%E5%BB%B6%E4%BC%B8%E6%8A%80%E8%A1%93%E8%AA%AA%E6%98%8E">七、使用課外延伸技術說明</h2>
+<h3 id="%E4%B8%80%E8%AA%B2%E5%A4%96%E6%8A%80%E8%A1%93%E4%B8%80overlay-view">（一）課外技術一：Overlay View</h3>
+<ul>
+<li>使用位置：StatusChipService.java</li>
+<li>使用情境：使用者離開 App 時短暫顯示總額。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// StatusChipService.java - 在背景查詢後動態建立 Overlay</span>
+<span class="hljs-keyword">int</span> total = dbHelper.getTotalAmount();
+View overlayView = LayoutInflater.from(<span class="hljs-keyword">this</span>).inflate(R.layout.activity_status_chip, <span class="hljs-keyword">null</span>);
+textTotal.setText(String.valueOf(total));
+windowManager.addView(overlayView, params);
+handler.postDelayed(() -&gt; windowManager.removeView(overlayView), <span class="hljs-number">5000</span>);
+</div></code></pre>
+<ul>
+<li>說明：使用系統層視窗呈現非互動狀態條，並在 5 秒後自動移除，讓使用者即使離開主畫面也能快速得知目前累計金額。</li>
+</ul>
+<hr>
+<h3 id="%E4%BA%8C%E8%AA%B2%E5%A4%96%E6%8A%80%E8%A1%93%E4%BA%8Cfirebase--google-auth">（二）課外技術二：Firebase + Google Auth</h3>
+<ul>
+<li>使用位置：SettingsActivity.java、CloudBackupManager.java</li>
+<li>使用情境：使用者啟用雲端備份並登入 Google 之後，才能將記帳資料同步到 Firestore 或從雲端還原。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// SettingsActivity.java - 按鈕觸發 Google Sign-In</span>
+googleSignInLauncher = registerForActivityResult(
+        <span class="hljs-keyword">new</span> ActivityResultContracts.StartActivityForResult(),
+        result -&gt; handleGoogleSignInResult(result.getData())
+);
+
+<span class="hljs-comment">// handleGoogleSignInResult() 取得帳號後與 FirebaseAuth 交換憑證</span>
+firebaseAuth.signInWithCredential(GoogleAuthProvider.getCredential(account.getIdToken(), <span class="hljs-keyword">null</span>))
+        .addOnSuccessListener(authResult -&gt; CloudBackupManager.syncNow(<span class="hljs-keyword">this</span>));
+
+<span class="hljs-comment">// CloudBackupManager.java - 同步到 Firestore 並安排驗證</span>
+List&lt;Map&lt;String, Object&gt;&gt; records = readRecords(context);
+payload.put(<span class="hljs-string">"records"</span>, records);
+FirebaseFirestore.getInstance()
+        .collection(<span class="hljs-string">"users"</span>).document(uid)
+        .collection(<span class="hljs-string">"backups"</span>).document(<span class="hljs-string">"latest"</span>)
+        .set(payload)
+        .addOnSuccessListener(unused -&gt; scheduleVerify(context.getApplicationContext(), uid, prefs, VERIFY_INTERVAL_MS));
+</div></code></pre>
+<ul>
+<li>說明：Google 登入完成後才會開啟 Firestore 同步；上傳後再排程驗證筆數，確保備份完整，還原流程也會檢查登入狀態並重新排程週期性任務。</li>
+</ul>
+<hr>
+<h3 id="%E4%B8%89%E8%AA%B2%E5%A4%96%E6%8A%80%E8%A1%93%E4%B8%89worker--alarmreceuver">（三）課外技術三：Worker + AlarmReceuver</h3>
+<ul>
+<li>使用位置：RecurringPaymentWorker.java、RecurringPaymentAlarmReceiver.java</li>
+<li>使用情境：每日檢查到期；每分鐘模式(偵錯用)用 Alarm 精準觸發。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// MainActivity.java - 啟動兩種排程</span>
+RecurringPaymentWorker.schedule(getApplicationContext());
+RecurringPaymentAlarmReceiver.scheduleAllMinute(getApplicationContext());
+
+<span class="hljs-comment">// RecurringPaymentWorker.java - doWork() 中判斷並新增紀錄</span>
+<span class="hljs-keyword">if</span> (shouldInsertToday(recurringPayment)) {
+    dbHelper.insertRecord(...);
+    NotificationHelper.showNotification(...);
+}
+
+<span class="hljs-comment">// RecurringPaymentAlarmReceiver.java - 每分鐘觸發 minute 頻率</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onReceive</span><span class="hljs-params">(Context context, Intent intent)</span> </span>{
+    dbHelper.insertRecordAndReturnId(...);
+    NotificationHelper.showNotification(...);
+    scheduleNextMinute(context, payment);
+}
+</div></code></pre>
+<ul>
+<li>說明：長週期任務交給 WorkManager 確保可靠執行，而每分鐘的高頻需求透過 AlarmManager 精準喚醒並立即寫入紀錄，同時發送通知與雲端同步。</li>
+</ul>
+<hr>
+<h3 id="%E5%9B%9B%E8%AA%B2%E5%A4%96%E6%8A%80%E8%A1%93%E5%9B%9Bcsv-%E5%8C%AF%E5%85%A5%E5%8C%AF%E5%87%BA--fileprovider">（四）課外技術四：CSV 匯入/匯出 + FileProvider</h3>
+<ul>
+<li>使用位置：CsvHelper.java、HistoryActivity.java</li>
+<li>使用情境：CSV 匯出分享、CSV 匯入還原資料。</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// CsvHelper.java - 匯出後用 FileProvider 分享</span>
+Uri contentUri = FileProvider.getUriForFile(activity, activity.getPackageName() + <span class="hljs-string">".fileprovider"</span>, file);
+Intent intent = <span class="hljs-keyword">new</span> Intent(Intent.ACTION_SEND);
+intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+intent.setType(<span class="hljs-string">"text/csv"</span>);
+
+<span class="hljs-comment">// HistoryActivity.java - 匯入時提供 Append/Overwrite 選項</span>
+String[] options = {<span class="hljs-string">"加入現有資料 (Append)"</span>, <span class="hljs-string">"覆蓋現有資料 (Overwrite)"</span>};
+<span class="hljs-keyword">new</span> MaterialAlertDialogBuilder(<span class="hljs-keyword">this</span>)
+        .setTitle(<span class="hljs-string">"匯入選項"</span>)
+        .setItems(options, (dialog, which) -&gt; { processImport(uri, overwrite); })
+        .show();
+</div></code></pre>
+<ul>
+<li>說明：匯出透過 FileProvider 產生安全的 content:// URI 避免檔案權限問題；匯入時提供兩種策略並在背景逐筆寫回資料庫，再觸發雲端同步以保持資料一致。</li>
+</ul>
+<hr>
+<h3 id="%E4%BA%94%E8%AA%B2%E5%A4%96%E6%8A%80%E8%A1%93%E4%BA%94material-components--%E5%8B%95%E6%85%8B%E4%B8%BB%E9%A1%8C%E8%89%B2%E5%BD%A9">（五）課外技術五：Material Components + 動態主題色彩</h3>
+<ul>
+<li>使用位置：SimplestBookApplication.java（套用動態色彩）、HistoryActivity.java、SettingsActivity.java 等</li>
+<li>使用情境：契合使用者裝置主題，並且支援淺色、深色模式</li>
+<li>程式碼：</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-comment">// SimplestBookApplication.java - 啟用 Material 動態主題色彩</span>
+<span class="hljs-meta">@Override</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onCreate</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">super</span>.onCreate();
+    DynamicColors.applyToActivitiesIfAvailable(<span class="hljs-keyword">this</span>);
+}
+
+<span class="hljs-comment">// SettingsActivity.java - MaterialSwitch 連動偏好設定</span>
+MaterialSwitch switchCloudBackup = findViewById(R.id.switchCloudBackup);
+switchCloudBackup.setOnCheckedChangeListener((v, isChecked) -&gt; handleCloudBackupToggle(isChecked));
+
+<span class="hljs-comment">// HistoryActivity.java - MaterialAlertDialogBuilder 匯入選項</span>
+<span class="hljs-keyword">new</span> MaterialAlertDialogBuilder(<span class="hljs-keyword">this</span>)
+        .setTitle(<span class="hljs-string">"匯入選項"</span>)
+        .setItems(options, (dialog, which) -&gt; { ... })
+        .setNegativeButton(<span class="hljs-string">"取消"</span>, <span class="hljs-keyword">null</span>)
+        .show();
+</div></code></pre>
+<ul>
+<li>說明：啟用 <code>DynamicColors.applyToActivitiesIfAvailable()</code> 後，所有 Material 元件會依裝置壁紙套用動態主題色，設定開關、雲端備份對話框與工具列在白天/夜間或更換主題時都能自動調整色彩與對比，維持一致、易讀且符合無障礙規範的 UI 體驗。</li>
+</ul>
+<h2 id="%E5%85%AB%E7%B8%BD%E7%B5%90%E8%88%87%E5%BF%83%E5%BE%97">八、總結與心得</h2>
+<p>一直覺得相比於網頁、桌面應用程式等等，要寫手機 App 很困難，但其實 Android 提供的 SDK 、函式庫和元件庫很完整，如果只是要做一些簡單的應用，其實恨快就可以達成。整學期最令我們印象深刻的是 Google Map 的應用，原本覺得那個是超難寫的東西，結果實際上手才發現，其實只需要幾行程式碼就可以達成標記、畫線、甚至移動等等功能，就算需要套用一些自己的樣式，也只需要提前定義好後面就能很輕鬆。</p>
+<p>但就是因為函式庫很複雜多樣，有時候東西一多起來，反而會搞不清楚哪個東西是從哪裡來的，課堂上也許是因為時間關係，很多事情都只有告訴我們怎麼做，沒有告訴我們為什麼這樣做，想要稍微做改動就容易摸不著頭緒，像是從字串讀取顏色就花了我好多時間研究。手邊剛好有兩本 Andriod 設計的書，都來回翻過好幾遍了。另外也好在有 AI，可以更快速地釐清問題、解釋專有名詞等等。</p>
+<p>這次的專案總結了我們之前學習過的東西，像是 OpenAI API 等等，還有之前寫過的網頁專案，把它們統整在一起做一個日常生活中真的可以應用的手機 App，還蠻有成就感的。另外這次算是終於有機會可以大量練習物件導向的程式設計，感覺之前學的記憶慢慢抓回來了，之後有空感覺可以再抽時間來複習一下設計模式。</p>
+
+</body>
+</html>
