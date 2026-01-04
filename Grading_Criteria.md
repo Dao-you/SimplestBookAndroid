@@ -29,7 +29,13 @@
 - 成員二：terry 方宇澤 光電四 111650037
     1. 介面 Layout 設計
 
-Branch Neteork 圖 (待更新)
+Branch Neteork 圖
+
+![](./images/branch1.png)
+
+![](./images/branch2.png)
+
+![](./images/branchlist.png)
 
 
 ---
@@ -150,6 +156,17 @@ Branch Neteork 圖 (待更新)
 ---
 
 ## 四、程式介紹（5 分）
+
+用到的函式庫：
+
+1. AndroidX WorkManager：週期性付款背景排程。
+7. Google Play Services Maps：地圖顯示與 Marker。
+8. Google Play Services Location：定位與預抓座標。
+9. Google Play Services Auth（Google Sign-In）：取得使用者 IdToken。
+10. Firebase Authentication：Google 登入與帳號狀態。
+11. Firebase Cloud Firestore：雲端備份同步與還原。
+12. Gson：解析 JSON（偵錯資料與 API 回應）。
+13. Guava：集合/工具類輔助（依賴庫）。
 
 以下依 `.java` 檔案說明其功能、主要方法/流程、資料來源與對應 UI，並附上 Mermaid 圖表：
 
