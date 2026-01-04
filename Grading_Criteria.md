@@ -541,7 +541,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["onCreate() 載入表單"] --> B["setupFrequencyGroup() 切換輸入"]
-    B --> C{"點擊儲存?"}
+    B --> C{{"點擊儲存?"}}
     C -->|"是"| D["save() 寫入 SQLite"]
     D --> E["排程 Worker/Alarm"]
     C -->|"刪除"| F["deleteRecurringPayment()"]
@@ -556,7 +556,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["WorkManager 觸發 doWork()"] --> B["讀取 recurring_payments"]
-    B --> C{"shouldInsertToday()?"}
+    B --> C{{"shouldInsertToday()?"}}
     C -->|"是"| D["insertRecordAndReturnId()"]
     D --> E["更新 lastRunAt"]
     D --> F["NotificationHelper.showNotification()"]
@@ -565,7 +565,7 @@ flowchart TD
 ```
 
 ### `RecurringPaymentAlarmReceiver.java`
-- 功能：負責 minute 頻率的 AlarmManager 觸發，精準到每分鐘寫入記帳並重新排程下一次。
+- 功能：偵錯用，負責 minute 頻率的 AlarmManager 觸發，精準到每分鐘寫入記帳並重新排程下一次。
 - 主要流程：
   1. `scheduleAllMinute()` 於設定頁或開機時取得 minute 項目並為每筆排程 Alarm。
   2. `onReceive()` 取得對應 recurring，呼叫 `insertRecordAndReturnId()` 插入紀錄、`NotificationHelper` 通知，最後以 `scheduleNextMinute()` 為該筆排下一次。
