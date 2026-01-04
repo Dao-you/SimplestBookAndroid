@@ -45,15 +45,15 @@ Branch Neteork 圖 (待更新)
             UB --> UC["loadCategories() 從 SQLite 讀取類別+預設選取"]
             UB --> UD["checkPermission() 申請定位/通知"]
             UB --> UE["prefetchLocation() 預抓座標"]
-            UE --> UF{ "定位成功?" }
+            UE --> UF{"定位成功?"}
             UF -->|"是"| UG["暫存經緯度供寫入"]
             UF -->|"否"| UH["維持 0,0 座標"]
-            UI["輸入金額/備註"] --> UJ{ "類別來源" }
+            UI["輸入金額/備註"] --> UJ{"類別來源"}
             UJ -->|"Grid 手動"| UK["選取類別並更新 Adapter"]
             UJ -->|"預設=自動"| UL["saveWithPlaceholderThenAutoSelect() 先存 '其他'"]
             UK --> UM["saveRecord() 驗證金額/備註"]
             UL --> UM
-            UM --> UN{ "定位開啟?" }
+            UM --> UN{"定位開啟?"}
             UN -->|"開啟且已預取"| UO["使用預取座標寫入"]
             UN -->|"需即時取得"| UP["getLastLocation() 取得/失敗 fallback"]
             UN -->|"未開啟"| UQ["直接以 0,0 儲存"]
@@ -61,7 +61,7 @@ Branch Neteork 圖 (待更新)
             UP --> UR
             UQ --> UR
             UR --> US["completeSave() 清空欄位/重新預抓"]
-            US --> UT{ "自動跳歷史頁?" }
+            US --> UT{"自動跳歷史頁?"}
             UT -->|"是"| UU["開啟 HistoryActivity"]
             UT -->|"否"| UV["停留主畫面等待下一筆"]
             UL --> UW["AutoCategoryService.start() 背景分類"]
@@ -69,7 +69,7 @@ Branch Neteork 圖 (待更新)
 
         subgraph B["背景/輔助服務"]
             UW --> BX["AutoCategoryClient 呼叫 API"]
-            BX --> BY{ "回傳類別" }
+            BX --> BY{"回傳類別"}
             BY -->|"成功"| BZ["更新 SQLite 類別並觸發 CloudBackup"]
             BY -->|"失敗"| BZA["回退 '其他' 並同步"]
             BZ --> BZB["Broadcast ACTION_RECORD_UPDATED" ]
@@ -77,7 +77,7 @@ Branch Neteork 圖 (待更新)
 
             UR --> CA["CloudBackupManager.requestSyncIfEnabled()"]
             CA --> CB["FirebaseAuth 取使用者"]
-            CB --> CC{ "已登入?" }
+            CB --> CC{"已登入?"}
             CC -->|"是"| CD["讀取 records/categories/recurring 並上傳 Firestore"]
             CC -->|"否"| CE["標記錯誤並等待登入"]
             CD --> CF["scheduleVerify() 驗證筆數"]
@@ -104,12 +104,12 @@ Branch Neteork 圖 (待更新)
     flowchart TD
         A["RecurringPaymentActivity 開啟"] --> B["新增/編輯項目 (RecurringPaymentEditActivity)"]
         B --> C["save() 寫入 SQLite recurring_payments"]
-        C --> D{ "頻率類型" }
+        C --> D{"頻率類型"}
         D -->|"daily/weekly/monthly"| E["RecurringPaymentWorker.schedule() 排 WorkManager"]
         D -->|"minute"| F["RecurringPaymentAlarmReceiver.scheduleAllMinute() 排 Alarm"]
         E --> G["每日觸發 doWork() 檢查 lastRunAt"]
         F --> H["每分鐘 onReceive() 判斷 minute 項目"]
-        G --> I{ "到期?" }
+        G --> I{"到期?"}
         H --> I
         I -->|"是"| J["insertRecordAndReturnId() 寫入紀錄"]
         J --> K["Notification 發送已新增紀錄" ]
@@ -123,19 +123,19 @@ Branch Neteork 圖 (待更新)
     flowchart TD
         subgraph Cloud["啟用與同步"]
             A["SettingsActivity 切換雲端備份 ON"] --> B["Google 登入 FirebaseAuth"]
-            B --> C{ "登入成功?" }
+            B --> C{"登入成功?"}
             C -->|"是"| D["CloudBackupManager.syncNow()" ]
             C -->|"否"| E["updateStatus(ERROR) 等待使用者重試"]
             D --> F["readRecords()/readCategories()/readRecurring()" ]
             F --> G["Firestore backups/latest set(payload)"]
             G --> H["scheduleVerify() 依筆數驗證" ]
-            H --> I{ "筆數符合?" }
+            H --> I{"筆數符合?"}
             I -->|"是"| J["updateStatus(SUCCESS)" ]
             I -->|"否"| K["重試驗證或標記 ERROR"]
         end
         subgraph Restore["還原流程"]
             L["使用者點擊手動還原"] --> M["restoreFromCloud() 下載最新備份"]
-            M --> N{ "資料存在?" }
+            M --> N{"資料存在?"}
             N -->|"有"| O["背景執行 restoreRecords()/restoreCategories()/restoreRecurring()" ]
             O --> P["updateStatus(SUCCESS) 並回呼 UI" ]
             P --> Q["重新排程 WorkManager/Alarm"]
@@ -177,12 +177,12 @@ flowchart TD
     A["onCreate() 綁定 UI+Toolbar"] --> B["loadCategories() 載入/預設類別"]
     B --> C["prefetchLocation() 預抓座標"]
     A --> D["使用者輸入金額/備註"]
-    D --> E{ "類別來源" }
+    D --> E{"類別來源"}
     E -->|"Grid 手動"| F["選擇類別"]
     E -->|"預設自動"| G["saveWithPlaceholderThenAutoSelect()" ]
     F --> H["saveRecord() 驗證欄位"]
     G --> H
-    H --> I{ "定位開啟?" }
+    H --> I{"定位開啟?"}
     I -->|"預取成功"| J["使用預取座標寫入"]
     I -->|"即時取得"| K["getLastLocation()/失敗 0,0"]
     I -->|"關閉"| L["以 0,0 儲存"]
@@ -190,7 +190,7 @@ flowchart TD
     K --> M
     L --> M
     M --> N["completeSave() 清空欄位"]
-    N --> O{ "自動跳歷史?" }
+    N --> O{"自動跳歷史?"}
     O -->|"是"| P["startActivity(HistoryActivity)"]
     O -->|"否"| Q["prefetchLocation() 再次預抓"]
     G --> R["AutoCategoryService.start() 背景分類"]
@@ -212,7 +212,7 @@ flowchart TD
     A["onCreate() 綁定 Toolbar/ListView"] --> B["loadRecords() 背景查 SQLite"]
     B --> C["計算總額/筆數並更新卡片"]
     C --> D["setAdapter() 顯示 ListView"]
-    D --> E{ "使用者操作" }
+    D --> E{"使用者操作"}
     E -->|"點擊項目"| F["開啟 EditRecordActivity"]
     E -->|"匯出分享"| G["CsvHelper.shareCsv()/exportToFile()"]
     E -->|"匯入"| H["CsvHelper.importCsv() 解析/寫入"]
@@ -232,11 +232,11 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["接收 Intent(id 等欄位)"] --> B["填入金額/備註/時間"]
-    B --> C{ "是否有座標" }
+    B --> C{"是否有座標"}
     C -->|"有"| D["顯示地圖預覽 + 逆地理文字"]
     D --> E["點擊開啟 FullMapActivity"]
     C -->|"無"| F["隱藏地圖卡片"]
-    B --> G{ "使用者操作" }
+    B --> G{"使用者操作"}
     G -->|"修改"| H["handlePrimaryAction() 更新 SQLite"]
     G -->|"未修改"| I["刪除確認 Dialog"]
 ```
