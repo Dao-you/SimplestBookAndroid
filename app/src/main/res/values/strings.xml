@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Simplest Book</string>
+    <string name="status_chip_total">累積金額：$ %1$d</string>
+    <string-array name="recurring_frequency_labels">
+        <item>每週</item>
+        <item>每月</item>
+        <item>每年</item>
+    </string-array>
+    <string-array name="recurring_weekday_labels">
+        <item>週一</item>
+        <item>週二</item>
+        <item>週三</item>
+        <item>週四</item>
+        <item>週五</item>
+        <item>週六</item>
+        <item>週日</item>
+    </string-array>
+</resources>

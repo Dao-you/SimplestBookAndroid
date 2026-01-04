@@ -1,0 +1,3 @@
+<resources>
+    <dimen name="status_chip_offset_y">24dp</dimen>
+</resources>
