@@ -942,12 +942,19 @@ new MaterialAlertDialogBuilder(this)
 
 ---
 
-### （六）課外技術六：Material Components
+### （六）課外技術六：Material Components + 動態主題色彩
 
-- 使用位置：HistoryActivity.java、SettingsActivity.java 等
-- 使用情境：對話框、Toolbar、Switch 等一致化 UI。
+- 使用位置：SimplestBookApplication.java（套用動態色彩）、HistoryActivity.java、SettingsActivity.java 等
+- 使用情境：設定頁切換雲端備份、匯入匯出顯示對話框，所有 Material Toolbar/Switch/Dialog 都繼承壁紙導出的動態色彩，維持一致主題。
 - 程式碼：
 ```java
+// SimplestBookApplication.java - 啟用 Material 動態主題色彩
+@Override
+public void onCreate() {
+    super.onCreate();
+    DynamicColors.applyToActivitiesIfAvailable(this);
+}
+
 // SettingsActivity.java - MaterialSwitch 連動偏好設定
 MaterialSwitch switchCloudBackup = findViewById(R.id.switchCloudBackup);
 switchCloudBackup.setOnCheckedChangeListener((v, isChecked) -> handleCloudBackupToggle(isChecked));
@@ -959,7 +966,7 @@ new MaterialAlertDialogBuilder(this)
         .setNegativeButton("取消", null)
         .show();
 ```
-- 說明：使用 Material 元件統一外觀與互動行為，Toolbar、Switch 與 Dialog 皆符合設計語彙，提供一致、易讀且符合無障礙規範的 UI 體驗。
+- 說明：啟用 `DynamicColors.applyToActivitiesIfAvailable()` 後，所有 Material 元件會依裝置壁紙套用動態主題色，設定開關、雲端備份對話框與工具列在白天/夜間或更換主題時都能自動調整色彩與對比，維持一致、易讀且符合無障礙規範的 UI 體驗。
 
 ## 八、總結與心得
 
