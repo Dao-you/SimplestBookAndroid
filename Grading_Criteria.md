@@ -1,11 +1,16 @@
 # 114 應用軟體實習－期末專題報告
 
 ## 基本資料
+
 專題名稱：Simplest Book Android 極簡記帳
 
 組長：孫培鈞 電子三甲 112360104
 
 組員：方宇澤 光電四 111650037
+
+Github 連結：[https://github.com/dao-you/SimplestBookAndroid](https://github.com/dao-you/SimplestBookAndroid)
+
+影片連結：[https://youtu.be/rfOhHyM-GJQ](https://youtu.be/rfOhHyM-GJQ)
 
 ---
 
